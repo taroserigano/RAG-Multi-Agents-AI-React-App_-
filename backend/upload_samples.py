@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 
 # Configuration
-BASE_URL = "http://localhost:8001"
+BASE_URL = "http://localhost:8000"
 DOCS_DIR = Path(__file__).parent / "sample_docs"
 
 def upload_document(filepath):
@@ -18,16 +18,15 @@ def upload_document(filepath):
         with open(filepath, 'rb') as f:
             files = {'file': (filename, f, 'text/plain')}
             response = requests.post(
-                f"{BASE_URL}/api/documents/upload",
+                f"{BASE_URL}/api/docs/upload",
                 files=files,
-                timeout=30
+                timeout=300  # 5 minutes for large document processing
             )
             
-        if response.status_code == 200:
+        if response.status_code in [200, 201]:
             data = response.json()
             print(f"✅ Uploaded: {filename}")
-            print(f"   ID: {data.get('id')}")
-            print(f"   Size: {data.get('size', 0):,} bytes")
+            print(f"   ID: {data.get('doc_id') or data.get('id')}")
             return True
         else:
             print(f"❌ Failed to upload {filename}: {response.status_code}")

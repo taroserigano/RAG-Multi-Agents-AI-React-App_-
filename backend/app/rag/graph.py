@@ -1,13 +1,14 @@
 """
 LangGraph-based RAG workflow.
 Orchestrates retrieval and generation with proper state management.
+Supports both regular and streaming responses.
 """
-from typing import TypedDict, List, Dict, Any, Optional
+from typing import TypedDict, List, Dict, Any, Optional, Generator
 from langgraph.graph import StateGraph, END
 
 from app.core.logging import get_logger
 from app.rag.retrieval import retrieve_relevant_chunks, Citation
-from app.rag.llms import get_llm
+from app.rag.llms import get_llm, get_streaming_llm
 
 logger = get_logger(__name__)
 
@@ -218,3 +219,104 @@ def run_rag_pipeline(
             "name": model or "default"
         }
     }
+
+
+def run_rag_pipeline_streaming(
+    question: str,
+    provider: str,
+    model: Optional[str] = None,
+    doc_ids: Optional[List[str]] = None,
+    top_k: int = 5
+) -> Generator[Dict[str, Any], None, None]:
+    """
+    Run the RAG pipeline with streaming response.
+    
+    Args:
+        question: User's question
+        provider: LLM provider ("ollama", "openai", "anthropic")
+        model: Optional specific model name
+        doc_ids: Optional list of document IDs to restrict search
+        top_k: Number of chunks to retrieve
+    
+    Yields:
+        Dictionary events with type and data:
+        - {"type": "token", "data": "..."}
+        - {"type": "citations", "data": [...]}
+        - {"type": "model", "data": {"provider": "...", "name": "..."}}
+    """
+    logger.info(f"Running streaming RAG pipeline with provider={provider}, top_k={top_k}")
+    
+    # Step 1: Retrieve relevant chunks
+    try:
+        citations, context = retrieve_relevant_chunks(
+            query=question,
+            top_k=top_k,
+            doc_ids=doc_ids
+        )
+        
+        # Yield citations early so frontend can display them
+        yield {
+            "type": "citations",
+            "data": [citation.to_dict() for citation in citations]
+        }
+        
+    except Exception as e:
+        logger.error(f"Error in retrieval: {e}")
+        yield {"type": "error", "data": f"Retrieval error: {str(e)}"}
+        return
+    
+    # Step 2: Check if we have context
+    if not context:
+        yield {
+            "type": "token", 
+            "data": "I couldn't find any relevant information in the documents to answer your question."
+        }
+        yield {"type": "model", "data": {"provider": provider, "name": model or "default"}}
+        return
+    
+    # Step 3: Build prompts
+    system_prompt = """You are a helpful AI assistant specializing in policy, compliance, and legal document analysis.
+
+Your role is to:
+1. Answer questions ONLY based on the provided context from official documents
+2. Be precise and cite specific sources when possible
+3. If the information is not in the context, clearly state that you don't have that information
+4. Use professional, clear language appropriate for legal/compliance contexts
+5. Never make assumptions or provide information not present in the context
+
+Answer the user's question using only the information provided below."""
+
+    user_prompt = f"""Context from documents:
+
+{context}
+
+---
+
+Question: {question}
+
+Please provide a clear, accurate answer based only on the context above. If the context doesn't contain enough information to answer the question, say so."""
+
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": user_prompt}
+    ]
+    
+    # Step 4: Stream LLM response
+    try:
+        llm = get_streaming_llm(provider=provider, model=model)
+        
+        if provider == "ollama":
+            # Use custom stream method for Ollama
+            for token in llm.stream(messages):
+                yield {"type": "token", "data": token}
+        else:
+            # Use LangChain stream for OpenAI/Anthropic
+            for chunk in llm.stream(messages):
+                if hasattr(chunk, 'content') and chunk.content:
+                    yield {"type": "token", "data": chunk.content}
+        
+        yield {"type": "model", "data": {"provider": provider, "name": model or "default"}}
+        
+    except Exception as e:
+        logger.error(f"Error in streaming generation: {e}")
+        yield {"type": "error", "data": f"Generation error: {str(e)}"}

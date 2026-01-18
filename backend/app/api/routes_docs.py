@@ -14,7 +14,7 @@ import re
 from app.db.session import get_db
 from app.db.models import Document
 from app.schemas import DocumentResponse, UploadResponse, ErrorResponse
-from app.rag.indexing import index_document
+from app.rag.indexing import index_document, delete_document_from_index
 from app.core.config import get_settings
 from app.core.logging import get_logger
 
@@ -199,3 +199,114 @@ def get_document(doc_id: str, db: Session = Depends(get_db)):
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Error retrieving document"
         )
+
+
+@router.delete("/{doc_id}", status_code=status.HTTP_200_OK)
+def delete_document(doc_id: str, db: Session = Depends(get_db)):
+    """
+    Delete a document and its vectors from the system.
+    
+    Args:
+        doc_id: Document UUID
+    
+    Returns:
+        Success message
+    """
+    try:
+        # Check if document exists
+        document = db.query(Document).filter(Document.id == doc_id).first()
+        if not document:
+            raise HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="Document not found"
+            )
+        
+        filename = document.filename
+        
+        # Delete vectors from Pinecone
+        try:
+            delete_document_from_index(doc_id)
+            logger.info(f"Deleted vectors for document {doc_id}")
+        except Exception as e:
+            logger.warning(f"Error deleting vectors from Pinecone: {e}")
+            # Continue with DB deletion even if Pinecone fails
+        
+        # Delete from database
+        db.delete(document)
+        db.commit()
+        
+        logger.info(f"Document {filename} (ID: {doc_id}) deleted successfully")
+        
+        return {
+            "message": f"Document '{filename}' deleted successfully",
+            "doc_id": doc_id
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error(f"Error deleting document: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error deleting document: {str(e)}"
+        )
+
+
+@router.post("/bulk-delete", status_code=status.HTTP_200_OK)
+def bulk_delete_documents(
+    doc_ids: List[str],
+    db: Session = Depends(get_db)
+):
+    """
+    Delete multiple documents and their vectors from the system.
+    
+    Args:
+        doc_ids: List of document UUIDs to delete
+    
+    Returns:
+        Summary of deleted and failed documents
+    """
+    if not doc_ids:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No document IDs provided"
+        )
+    
+    deleted = []
+    failed = []
+    
+    for doc_id in doc_ids:
+        try:
+            # Check if document exists
+            document = db.query(Document).filter(Document.id == doc_id).first()
+            if not document:
+                failed.append({"doc_id": doc_id, "reason": "Document not found"})
+                continue
+            
+            filename = document.filename
+            
+            # Delete vectors from Pinecone
+            try:
+                delete_document_from_index(doc_id)
+            except Exception as e:
+                logger.warning(f"Error deleting vectors for {doc_id}: {e}")
+                # Continue with DB deletion
+            
+            # Delete from database
+            db.delete(document)
+            deleted.append({"doc_id": doc_id, "filename": filename})
+            
+        except Exception as e:
+            logger.error(f"Error deleting document {doc_id}: {e}")
+            failed.append({"doc_id": doc_id, "reason": str(e)})
+    
+    # Commit all deletions at once
+    db.commit()
+    
+    logger.info(f"Bulk delete: {len(deleted)} deleted, {len(failed)} failed")
+    
+    return {
+        "message": f"Deleted {len(deleted)} documents, {len(failed)} failed",
+        "deleted": deleted,
+        "failed": failed
+    }

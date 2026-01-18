@@ -40,6 +40,7 @@ class CitationResponse(BaseModel):
     page_number: Optional[int] = None
     chunk_index: int
     score: float
+    text: Optional[str] = Field(None, description="Snippet of cited text")
 
 
 class ModelInfo(BaseModel):
@@ -93,6 +94,21 @@ class ChatResponse(BaseModel):
                 }
             }
         }
+
+
+class ChatHistoryResponse(BaseModel):
+    """Response schema for chat history entries."""
+    id: str
+    user_id: str
+    provider: str
+    model: str
+    question: str
+    answer: str
+    cited_doc_ids: Optional[List[str]] = None
+    created_at: datetime
+    
+    class Config:
+        from_attributes = True
 
 
 # ============================================================================

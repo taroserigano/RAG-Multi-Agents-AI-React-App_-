@@ -1,6 +1,10 @@
 """
-Vector Store Module - ChromaDB Integration
+Vector Store Module - ChromaDB Integration (DEPRECATED)
 Handles document embedding storage and semantic search
+
+NOTE: This module is DEPRECATED and kept for backwards compatibility.
+The production system now uses Pinecone for vector storage.
+See: indexing.py, retrieval.py, embeddings.py for current implementation.
 """
 import os
 from typing import List, Optional, Dict, Any
@@ -12,7 +16,8 @@ try:
     CHROMADB_AVAILABLE = True
 except ImportError:
     CHROMADB_AVAILABLE = False
-    print("[WARNING] chromadb not installed. Run: pip install chromadb")
+    # Suppress warning in production since we use Pinecone
+    # print("[WARNING] chromadb not installed. Run: pip install chromadb")
 
 # Sentence Transformers for embeddings
 SENTENCE_TRANSFORMERS_AVAILABLE = False
@@ -20,9 +25,12 @@ try:
     from sentence_transformers import SentenceTransformer
     SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
-    print("[WARNING] sentence-transformers not installed. Run: pip install sentence-transformers")
+    # Suppress warning in production since we use OpenAI embeddings
+    # print("[WARNING] sentence-transformers not installed. Run: pip install sentence-transformers")
+    pass
 except Exception as e:
-    print(f"[WARNING] sentence-transformers load error: {e}")
+    pass
+    # print(f"[WARNING] sentence-transformers load error: {e}")
 
 
 class EmbeddingService:

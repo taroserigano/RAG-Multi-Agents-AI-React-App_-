@@ -38,7 +38,8 @@ class Citation:
             "filename": self.filename,
             "page_number": self.page_number,
             "chunk_index": self.chunk_index,
-            "score": round(self.score, 4)
+            "score": round(self.score, 4),
+            "text": self.text[:200] + "..." if len(self.text) > 200 else self.text  # Truncate for response
         }
 
 

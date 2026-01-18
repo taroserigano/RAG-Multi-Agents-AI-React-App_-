@@ -86,5 +86,5 @@ def get_embeddings(provider: str = "ollama") -> object:
         raise ValueError(f"Unknown embedding provider: {provider}")
 
 
-# Default embeddings instance (Ollama)
-default_embeddings = get_embeddings("ollama")
+# Default embeddings instance (OpenAI for better quality)
+default_embeddings = get_embeddings("openai")

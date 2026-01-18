@@ -261,4 +261,179 @@ export const healthCheck = async () => {
   return response.data;
 };
 
+// ============================================================================
+// Image API (Multimodal)
+// ============================================================================
+
+/**
+ * Upload an image file
+ * @param {File} file - Image file to upload
+ * @param {string} [description] - Optional description
+ * @param {boolean} [generateDescription=true] - Auto-generate description using vision model
+ * @returns {Promise} - Upload response with image_id
+ */
+export const uploadImage = async (
+  file,
+  description = "",
+  generateDescription = true,
+) => {
+  const formData = new FormData();
+  formData.append("file", file);
+  if (description) {
+    formData.append("description", description);
+  }
+  formData.append("generate_description", generateDescription);
+
+  const response = await api.post("/api/images/upload", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+
+  return response.data;
+};
+
+/**
+ * Get list of all uploaded images
+ * @param {number} [skip=0] - Number of items to skip
+ * @param {number} [limit=50] - Max number of items to return
+ * @returns {Promise} - Array of image metadata
+ */
+export const getImages = async (skip = 0, limit = 50) => {
+  const response = await api.get("/api/images/", {
+    params: { skip, limit },
+  });
+  return response.data || [];
+};
+
+/**
+ * Get specific image by ID
+ * @param {string} imageId - Image UUID
+ * @returns {Promise} - Image metadata
+ */
+export const getImage = async (imageId) => {
+  const response = await api.get(`/api/images/${imageId}`);
+  return response.data;
+};
+
+/**
+ * Delete an image by ID
+ * @param {string} imageId - Image UUID
+ * @returns {Promise} - Delete confirmation
+ */
+export const deleteImage = async (imageId) => {
+  const response = await api.delete(`/api/images/${imageId}`);
+  return response.data;
+};
+
+/**
+ * Search images using text query (multimodal search)
+ * @param {Object} searchRequest - Search request payload
+ * @param {string} searchRequest.query - Text query for semantic image search
+ * @param {number} [searchRequest.top_k=5] - Number of results to return
+ * @returns {Promise} - Array of matching images with scores
+ */
+export const searchImages = async (searchRequest) => {
+  const response = await api.post("/api/images/search", searchRequest);
+  return response.data;
+};
+
+/**
+ * Get supported image formats
+ * @returns {Promise} - List of supported formats
+ */
+export const getSupportedImageFormats = async () => {
+  const response = await api.get("/api/images/formats/supported");
+  return response.data;
+};
+
+/**
+ * Stream a multimodal chat response (with image context)
+ * @param {Object} chatRequest - Chat request payload with optional images
+ * @param {string} chatRequest.user_id - User/session identifier
+ * @param {string} chatRequest.provider - LLM provider (openai/anthropic for vision)
+ * @param {string} chatRequest.question - User's question
+ * @param {string[]} [chatRequest.image_ids] - Optional image IDs to include in context
+ * @param {Function} onToken - Callback for each token received
+ * @param {Function} onCitations - Callback for citations data
+ * @param {Function} onDone - Callback when streaming is complete
+ * @param {Function} onError - Callback for errors
+ * @returns {Function} - Cleanup function to abort the stream
+ */
+export const streamMultimodalChat = (
+  chatRequest,
+  { onToken, onCitations, onImages, onDone, onError },
+) => {
+  const controller = new AbortController();
+
+  const fetchStream = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/api/chat/stream`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(chatRequest),
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const event = JSON.parse(trimmed.slice(6));
+
+              switch (event.type) {
+                case "token":
+                  onToken?.(event.data);
+                  break;
+                case "citations":
+                  onCitations?.(event.data);
+                  break;
+                case "images":
+                  onImages?.(event.data);
+                  break;
+                case "done":
+                  onDone?.(event.data);
+                  break;
+                case "error":
+                  onError?.(new Error(event.data));
+                  break;
+              }
+            } catch (e) {
+              // Skip malformed JSON
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        onError?.(error);
+      }
+    }
+  };
+
+  fetchStream();
+
+  return () => controller.abort();
+};
+
 export default api;

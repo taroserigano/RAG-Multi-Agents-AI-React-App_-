@@ -10,9 +10,11 @@ from typing import List
 import json
 
 from app.db.session import get_db
-from app.db.models import ChatAudit
+from app.db.models import ChatAudit, ImageDocument
 from app.schemas import ChatRequest, ChatResponse, ChatHistoryResponse, ErrorResponse
 from app.rag.graph import run_rag_pipeline, run_rag_pipeline_streaming
+from app.rag.multimodal_retrieval import retrieve_multimodal
+from app.rag.llms import get_streaming_llm
 from app.core.logging import get_logger
 
 router = APIRouter(prefix="/api/chat", tags=["chat"])
@@ -136,6 +138,29 @@ async def chat_stream(
     
     logger.info(f"Processing streaming chat request from user {request.user_id}")
     
+    # Check if multimodal mode (images selected)
+    is_multimodal = request.image_ids and len(request.image_ids) > 0
+    image_details = []
+    
+    if is_multimodal:
+        logger.info(f"Multimodal chat with {len(request.image_ids)} images")
+        # Fetch image details from database for context
+        try:
+            images = db.query(ImageDocument).filter(ImageDocument.id.in_(request.image_ids)).all()
+            logger.info(f"Found {len(images)} images in database")
+            for img in images:
+                desc = img.description or img.extracted_text or "No description available"
+                image_details.append({
+                    "id": img.id,
+                    "filename": img.filename,
+                    "description": desc,
+                    "thumbnail_base64": img.thumbnail_base64,
+                    "content_type": img.content_type
+                })
+                logger.info(f"Image {img.filename}: description={desc[:100] if desc else 'None'}...")
+        except Exception as e:
+            logger.error(f"Error fetching image details: {e}")
+    
     # Extract RAG options
     rag_options = None
     if request.rag_options:
@@ -152,26 +177,69 @@ async def chat_stream(
         model_info = {"provider": request.provider, "name": request.model or "default"}
         
         try:
-            # Stream response tokens with RAG options
-            for event in run_rag_pipeline_streaming(
-                question=request.question,
-                provider=request.provider,
-                model=request.model,
-                doc_ids=request.doc_ids,
-                top_k=request.top_k or 5,
-                rag_options=rag_options
-            ):
-                if event["type"] == "token":
-                    full_answer += event["data"]
-                    yield f"data: {json.dumps({'type': 'token', 'data': event['data']})}\n\n"
-                elif event["type"] == "citations":
-                    citations = event["data"]
-                    yield f"data: {json.dumps({'type': 'citations', 'data': citations})}\n\n"
-                elif event["type"] == "model":
-                    model_info = event["data"]
-                elif event["type"] == "error":
-                    yield f"data: {json.dumps({'type': 'error', 'data': event['data']})}\n\n"
-                    return
+            # If images are selected, use image-focused chat
+            if is_multimodal and image_details:
+                logger.info(f"Running image-focused chat with {len(image_details)} images")
+                
+                # Build system prompt for image analysis
+                system_prompt = """You are an AI assistant that helps users understand images. 
+You have been provided with descriptions of images that the user wants to ask about.
+Answer the user's question based on the image descriptions provided.
+Be specific and reference the image details when answering."""
+
+                # Build image context
+                image_context_parts = ["=== IMAGE DESCRIPTIONS ==="]
+                for img in image_details:
+                    image_context_parts.append(f"\nImage: {img['filename']}")
+                    image_context_parts.append(f"Description: {img['description']}")
+                image_context = "\n".join(image_context_parts)
+                
+                # Create messages for LLM
+                messages = [
+                    {"role": "system", "content": system_prompt},
+                    {"role": "user", "content": f"{image_context}\n\n=== USER QUESTION ===\n{request.question}"}
+                ]
+                
+                # Get streaming LLM and generate response
+                llm = get_streaming_llm(request.provider, request.model)
+                model_info = {"provider": request.provider, "name": request.model or llm.model if hasattr(llm, 'model') else "default"}
+                
+                for token in llm.stream(messages):
+                    if hasattr(token, 'content'):
+                        token_text = token.content
+                    else:
+                        token_text = str(token)
+                    full_answer += token_text
+                    yield f"data: {json.dumps({'type': 'token', 'data': token_text})}\n\n"
+                
+                # Send empty citations (no document sources for image-only queries)
+                yield f"data: {json.dumps({'type': 'citations', 'data': []})}\n\n"
+                
+            else:
+                # Normal document RAG flow
+                for event in run_rag_pipeline_streaming(
+                    question=request.question,
+                    provider=request.provider,
+                    model=request.model,
+                    doc_ids=request.doc_ids,
+                    top_k=request.top_k or 5,
+                    rag_options=rag_options
+                ):
+                    if event["type"] == "token":
+                        full_answer += event["data"]
+                        yield f"data: {json.dumps({'type': 'token', 'data': event['data']})}\n\n"
+                    elif event["type"] == "citations":
+                        citations = event["data"]
+                        yield f"data: {json.dumps({'type': 'citations', 'data': citations})}\n\n"
+                    elif event["type"] == "model":
+                        model_info = event["data"]
+                    elif event["type"] == "error":
+                        yield f"data: {json.dumps({'type': 'error', 'data': event['data']})}\n\n"
+                        return
+            
+            # Send images info if multimodal
+            if is_multimodal and image_details:
+                yield f"data: {json.dumps({'type': 'images', 'data': image_details})}\n\n"
             
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done', 'data': {'model': model_info}})}\n\n"
@@ -179,13 +247,15 @@ async def chat_stream(
             # Save to audit log
             try:
                 cited_doc_ids = list(set([c["doc_id"] for c in citations])) if citations else []
+                cited_image_ids = request.image_ids if is_multimodal else None
                 audit = ChatAudit(
                     user_id=request.user_id,
                     provider=request.provider,
                     model=request.model or model_info["name"],
                     question=request.question,
                     answer=full_answer,
-                    cited_doc_ids=cited_doc_ids if cited_doc_ids else None
+                    cited_doc_ids=cited_doc_ids if cited_doc_ids else None,
+                    cited_image_ids=cited_image_ids
                 )
                 db.add(audit)
                 db.commit()

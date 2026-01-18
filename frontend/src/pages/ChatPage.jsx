@@ -13,17 +13,21 @@ import {
   Search,
   BarChart3,
   FileText,
+  Image,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import MessageList from "../components/MessageList";
 import ChatBox from "../components/ChatBox";
 import DocumentList from "../components/DocumentList";
 import ModelPicker from "../components/ModelPicker";
+import ImageGallery from "../components/ImageGallery";
 import {
   useDocuments,
   useChatHistory,
   useClearChatHistory,
 } from "../hooks/useApi";
-import { streamChatMessage } from "../api/client";
+import { streamChatMessage, streamMultimodalChat } from "../api/client";
 
 // Generate a simple session ID for user tracking
 const getUserId = () => {
@@ -41,6 +45,9 @@ export default function ChatPage() {
   const [selectedProvider, setSelectedProvider] = useState("ollama");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDocIds, setSelectedDocIds] = useState([]);
+  const [selectedImageIds, setSelectedImageIds] = useState([]);
+  const [images, setImages] = useState([]);
+  const [showImages, setShowImages] = useState(false);
   const [isStreaming, setIsStreaming] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [showRagOptions, setShowRagOptions] = useState(false);
@@ -75,6 +82,22 @@ export default function ChatPage() {
   const { data: chatHistory, refetch: refetchHistory } = useChatHistory(userId);
   const clearHistoryMutation = useClearChatHistory();
 
+  // Load images on mount
+  useEffect(() => {
+    const loadImages = async () => {
+      try {
+        const response = await fetch("http://localhost:8000/api/images");
+        if (response.ok) {
+          const data = await response.json();
+          setImages(data);
+        }
+      } catch (error) {
+        console.error("Failed to load images:", error);
+      }
+    };
+    loadImages();
+  }, []);
+
   // Sync streaming text to ref for onDone callback
   useEffect(() => {
     finalContentRef.current = streamingText;
@@ -108,8 +131,14 @@ export default function ChatPage() {
 
   const handleSendMessage = useCallback(
     async (content) => {
-      // Add user message
-      setMessages((prev) => [...prev, { type: "user", content }]);
+      // Add user message (include selected images info)
+      const userMessage = {
+        type: "user",
+        content,
+        imageIds:
+          selectedImageIds.length > 0 ? [...selectedImageIds] : undefined,
+      };
+      setMessages((prev) => [...prev, userMessage]);
 
       // Reset streaming state
       setStreamingText("");
@@ -124,11 +153,16 @@ export default function ChatPage() {
         model: selectedModel || undefined,
         question: content,
         doc_ids: selectedDocIds.length > 0 ? selectedDocIds : undefined,
+        image_ids: selectedImageIds.length > 0 ? selectedImageIds : undefined,
         top_k: 5,
         rag_options: ragOptions,
       };
 
-      abortStreamRef.current = streamChatMessage(chatRequest, {
+      // Use multimodal chat if images are selected, otherwise use regular chat
+      const streamFn =
+        selectedImageIds.length > 0 ? streamMultimodalChat : streamChatMessage;
+
+      abortStreamRef.current = streamFn(chatRequest, {
         onToken: (token) => {
           // Buffer tokens and batch updates with requestAnimationFrame for performance
           tokenBufferRef.current += token;
@@ -198,6 +232,7 @@ export default function ChatPage() {
       selectedProvider,
       selectedModel,
       selectedDocIds,
+      selectedImageIds,
       ragOptions,
       refetchHistory,
     ],
@@ -241,9 +276,9 @@ export default function ChatPage() {
     Object.values(ragOptions).filter(Boolean).length;
 
   return (
-    <div className="h-[calc(100vh-8rem)]">
+    <div className="min-h-[calc(100vh-8rem)] flex flex-col">
       {/* Header */}
-      <div className="mb-8 flex items-center justify-between">
+      <div className="mb-8 flex items-center justify-between flex-shrink-0">
         <div>
           <h1 className="text-2xl font-bold text-white mb-1 flex items-center tracking-tight">
             <span className="gradient-text-vibrant">Document Q&A</span>
@@ -575,9 +610,9 @@ export default function ChatPage() {
       </div>
 
       {/* Main Chat Layout */}
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 h-[calc(100%-12rem)]">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-[500px]">
         {/* Left Sidebar - Document Filter */}
-        <div className="lg:col-span-1 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-5 overflow-y-auto custom-scrollbar">
+        <div className="lg:col-span-1 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-5 overflow-y-auto custom-scrollbar max-h-[600px]">
           <div className="flex items-center mb-4">
             <div className="p-2 rounded-xl bg-amber-500/15 mr-3">
               <FileText className="h-5 w-5 text-amber-400" />
@@ -601,10 +636,105 @@ export default function ChatPage() {
                 </p>
               </div>
             )}
+
+          {/* Images Section */}
+          <div className="mt-6 pt-6 border-t border-zinc-800">
+            <button
+              onClick={() => setShowImages(!showImages)}
+              className="w-full flex items-center justify-between mb-3"
+            >
+              <div className="flex items-center">
+                <div className="p-2 rounded-xl bg-fuchsia-500/15 mr-3">
+                  <Image className="h-5 w-5 text-fuchsia-400" />
+                </div>
+                <h2 className="text-sm font-semibold text-white">Images</h2>
+                {selectedImageIds.length > 0 && (
+                  <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">
+                    {selectedImageIds.length} selected
+                  </span>
+                )}
+              </div>
+              {showImages ? (
+                <ChevronUp className="h-4 w-4 text-zinc-500" />
+              ) : (
+                <ChevronDown className="h-4 w-4 text-zinc-500" />
+              )}
+            </button>
+
+            {showImages && (
+              <div className="space-y-3">
+                {images.length > 0 ? (
+                  <>
+                    <p className="text-xs text-zinc-500 mb-2">
+                      Select images to ask questions about them
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {images.map((img) => (
+                        <button
+                          key={img.id}
+                          onClick={() => {
+                            setSelectedImageIds((prev) =>
+                              prev.includes(img.id)
+                                ? prev.filter((id) => id !== img.id)
+                                : [...prev, img.id],
+                            );
+                          }}
+                          className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
+                            selectedImageIds.includes(img.id)
+                              ? "border-fuchsia-500 ring-2 ring-fuchsia-500/30"
+                              : "border-zinc-700 hover:border-zinc-600"
+                          }`}
+                        >
+                          <img
+                            src={`data:${img.content_type};base64,${img.thumbnail_base64}`}
+                            alt={img.filename || "Image"}
+                            className="w-full h-full object-cover"
+                          />
+                          {selectedImageIds.includes(img.id) && (
+                            <div className="absolute inset-0 bg-fuchsia-500/20 flex items-center justify-center">
+                              <div className="w-6 h-6 rounded-full bg-fuchsia-500 flex items-center justify-center">
+                                <svg
+                                  className="w-4 h-4 text-white"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                  stroke="currentColor"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M5 13l4 4L19 7"
+                                  />
+                                </svg>
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+                    {selectedImageIds.length > 0 && (
+                      <button
+                        onClick={() => setSelectedImageIds([])}
+                        className="w-full mt-2 text-xs text-zinc-500 hover:text-zinc-400 transition-colors"
+                      >
+                        Clear selection
+                      </button>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-4 bg-fuchsia-500/10 border border-fuchsia-500/20 rounded-xl">
+                    <p className="text-xs text-fuchsia-400">
+                      No images uploaded. Go to Upload page to add images.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right Side - Chat Interface */}
-        <div className="lg:col-span-3 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 flex flex-col overflow-hidden">
+        <div className="lg:col-span-3 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 flex flex-col min-h-[500px] max-h-[700px]">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {displayMessages.length === 0 ? (
@@ -617,14 +747,15 @@ export default function ChatPage() {
                     Start a Conversation
                   </h3>
                   <p className="text-zinc-500 text-sm max-w-sm mx-auto">
-                    Ask questions about your uploaded policy documents
+                    Ask questions about your documents or select images to
+                    analyze
                   </p>
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
                     <span className="px-3 py-1.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-700/50">
                       "What is our leave policy?"
                     </span>
                     <span className="px-3 py-1.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-700/50">
-                      "Explain remote work guidelines"
+                      "Describe this image"
                     </span>
                   </div>
                 </div>

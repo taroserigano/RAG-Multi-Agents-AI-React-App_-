@@ -13,6 +13,7 @@ from app.core.logging import setup_logging, get_logger
 from app.db.migrations import init_db
 from app.api.routes_docs import router as docs_router
 from app.api.routes_chat import router as chat_router
+from app.api.routes_images import router as images_router
 
 settings = get_settings()
 
@@ -123,6 +124,7 @@ async def check_api_key(request: Request, call_next):
 # Include routers
 app.include_router(docs_router)
 app.include_router(chat_router)
+app.include_router(images_router)
 
 
 @app.get("/")

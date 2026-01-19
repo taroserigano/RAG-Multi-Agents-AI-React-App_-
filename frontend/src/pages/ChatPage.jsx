@@ -42,7 +42,7 @@ const getUserId = () => {
 export default function ChatPage() {
   // Core state
   const [messages, setMessages] = useState([]);
-  const [selectedProvider, setSelectedProvider] = useState("ollama");
+  const [selectedProvider, setSelectedProvider] = useState("openai");
   const [selectedModel, setSelectedModel] = useState("");
   const [selectedDocIds, setSelectedDocIds] = useState([]);
   const [selectedImageIds, setSelectedImageIds] = useState([]);
@@ -86,7 +86,7 @@ export default function ChatPage() {
   useEffect(() => {
     const loadImages = async () => {
       try {
-        const response = await fetch("http://localhost:8000/api/images");
+        const response = await fetch("http://localhost:8001/api/images");
         if (response.ok) {
           const data = await response.json();
           setImages(data);
@@ -280,11 +280,11 @@ export default function ChatPage() {
       {/* Header */}
       <div className="mb-8 flex items-center justify-between flex-shrink-0">
         <div>
-          <h1 className="text-2xl font-bold text-white mb-1 flex items-center tracking-tight">
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-1 flex items-center tracking-tight">
             <span className="gradient-text-vibrant">Document Q&A</span>
             <Sparkles className="h-5 w-5 ml-2 text-amber-400" />
           </h1>
-          <p className="text-zinc-500 text-sm">
+          <p className="text-[var(--text-muted)] text-sm">
             Ask questions about your uploaded documents
           </p>
         </div>
@@ -295,7 +295,7 @@ export default function ChatPage() {
             className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
               showRagOptions
                 ? "bg-violet-500/15 text-violet-300 border border-violet-500/25"
-                : "text-zinc-500 hover:text-white bg-zinc-900/50 border border-zinc-800 hover:border-violet-500/30"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] hover:border-violet-500/30"
             }`}
           >
             <Settings2
@@ -313,7 +313,7 @@ export default function ChatPage() {
             className={`flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
               showHistory
                 ? "bg-blue-500/15 text-blue-300 border border-blue-500/25"
-                : "text-zinc-500 hover:text-white bg-zinc-900/50 border border-zinc-800 hover:border-blue-500/30"
+                : "text-[var(--text-muted)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] hover:border-blue-500/30"
             }`}
           >
             <History
@@ -326,22 +326,24 @@ export default function ChatPage() {
 
       {/* RAG Options Panel */}
       {showRagOptions && (
-        <div className="mb-6 bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-5 border border-zinc-800/80 animate-slideUp">
+        <div className="mb-6 bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl p-5 border border-[var(--border-subtle)] animate-slideUp transition-colors">
           <div className="flex items-center justify-between mb-5">
             <div className="flex items-center">
               <div className="p-2 rounded-xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 mr-3">
                 <Sparkles className="h-5 w-5 text-violet-400" />
               </div>
               <div>
-                <h3 className="font-semibold text-white text-sm">
+                <h3 className="font-semibold text-[var(--text-primary)] text-sm">
                   Advanced RAG
                 </h3>
-                <p className="text-xs text-zinc-600">Enhance search quality</p>
+                <p className="text-xs text-[var(--text-muted)]">
+                  Enhance search quality
+                </p>
               </div>
             </div>
             <button
               onClick={() => setShowRagOptions(false)}
-              className="p-2 text-zinc-600 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
             >
               <X className="h-4 w-4" />
             </button>
@@ -353,7 +355,7 @@ export default function ChatPage() {
               className={`relative flex items-start p-4 rounded-xl border cursor-pointer transition-all duration-200 group ${
                 ragOptions.query_expansion
                   ? "bg-violet-500/10 border-violet-500/30"
-                  : "bg-zinc-800/50 border-zinc-700/50 hover:border-violet-500/30"
+                  : "bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] hover:border-violet-500/30"
               }`}
             >
               <input
@@ -371,7 +373,7 @@ export default function ChatPage() {
                 className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                   ragOptions.query_expansion
                     ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 border-transparent"
-                    : "border-zinc-600 group-hover:border-violet-500/50"
+                    : "border-[var(--border-subtle)] group-hover:border-violet-500/50"
                 }`}
               >
                 {ragOptions.query_expansion && (
@@ -393,15 +395,15 @@ export default function ChatPage() {
               <div className="ml-3">
                 <div className="flex items-center">
                   <Sparkles
-                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.query_expansion ? "text-violet-400" : "text-zinc-500"}`}
+                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.query_expansion ? "text-violet-400" : "text-[var(--text-muted)]"}`}
                   />
                   <span
-                    className={`text-sm font-medium ${ragOptions.query_expansion ? "text-white" : "text-zinc-400"}`}
+                    className={`text-sm font-medium ${ragOptions.query_expansion ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                   >
                     Query Expansion
                   </span>
                 </div>
-                <p className="text-xs text-zinc-600 mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   Multiple query variations
                 </p>
               </div>
@@ -412,7 +414,7 @@ export default function ChatPage() {
               className={`relative flex items-start p-4 rounded-xl border cursor-pointer transition-all duration-200 group ${
                 ragOptions.hybrid_search
                   ? "bg-blue-500/10 border-blue-500/30"
-                  : "bg-zinc-800/50 border-zinc-700/50 hover:border-blue-500/30"
+                  : "bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] hover:border-blue-500/30"
               }`}
             >
               <input
@@ -430,7 +432,7 @@ export default function ChatPage() {
                 className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                   ragOptions.hybrid_search
                     ? "bg-gradient-to-br from-blue-500 to-cyan-500 border-transparent"
-                    : "border-zinc-600 group-hover:border-blue-500/50"
+                    : "border-[var(--border-subtle)] group-hover:border-blue-500/50"
                 }`}
               >
                 {ragOptions.hybrid_search && (
@@ -452,15 +454,15 @@ export default function ChatPage() {
               <div className="ml-3">
                 <div className="flex items-center">
                   <Search
-                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.hybrid_search ? "text-blue-400" : "text-zinc-500"}`}
+                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.hybrid_search ? "text-blue-400" : "text-[var(--text-muted)]"}`}
                   />
                   <span
-                    className={`text-sm font-medium ${ragOptions.hybrid_search ? "text-white" : "text-zinc-400"}`}
+                    className={`text-sm font-medium ${ragOptions.hybrid_search ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                   >
                     Hybrid Search
                   </span>
                 </div>
-                <p className="text-xs text-slate-500 mt-1">
+                <p className="text-xs text-[var(--text-muted)] mt-1">
                   Semantic + keyword search
                 </p>
               </div>
@@ -471,7 +473,7 @@ export default function ChatPage() {
               className={`relative flex items-start p-4 rounded-xl border cursor-pointer transition-all duration-200 group ${
                 ragOptions.reranking
                   ? "bg-emerald-500/10 border-emerald-500/30"
-                  : "bg-zinc-800/50 border-zinc-700/50 hover:border-emerald-500/30"
+                  : "bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] hover:border-emerald-500/30"
               }`}
             >
               <input
@@ -489,7 +491,7 @@ export default function ChatPage() {
                 className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 ${
                   ragOptions.reranking
                     ? "bg-gradient-to-br from-emerald-500 to-teal-500 border-transparent"
-                    : "border-zinc-600 group-hover:border-emerald-500/50"
+                    : "border-[var(--border-subtle)] group-hover:border-emerald-500/50"
                 }`}
               >
                 {ragOptions.reranking && (
@@ -511,15 +513,15 @@ export default function ChatPage() {
               <div className="ml-3">
                 <div className="flex items-center">
                   <BarChart3
-                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.reranking ? "text-emerald-400" : "text-zinc-500"}`}
+                    className={`h-3.5 w-3.5 mr-1.5 ${ragOptions.reranking ? "text-emerald-400" : "text-[var(--text-muted)]"}`}
                   />
                   <span
-                    className={`text-sm font-medium ${ragOptions.reranking ? "text-white" : "text-zinc-400"}`}
+                    className={`text-sm font-medium ${ragOptions.reranking ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                   >
                     Reranking
                   </span>
                 </div>
-                <p className="text-xs text-zinc-600 mt-0.5">
+                <p className="text-xs text-[var(--text-muted)] mt-0.5">
                   Relevance scoring
                 </p>
               </div>
@@ -527,13 +529,15 @@ export default function ChatPage() {
           </div>
 
           {activeRagOptionsCount > 0 && (
-            <div className="mt-4 pt-4 border-t border-zinc-800 flex items-center justify-between">
+            <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
               <p className="text-xs text-violet-400 flex items-center">
                 <Sparkles className="h-3 w-3 mr-1.5" />
                 {activeRagOptionsCount} option
                 {activeRagOptionsCount > 1 ? "s" : ""} enabled
               </p>
-              <span className="text-xs text-zinc-600">May take longer</span>
+              <span className="text-xs text-[var(--text-muted)]">
+                May take longer
+              </span>
             </div>
           )}
         </div>
@@ -541,13 +545,15 @@ export default function ChatPage() {
 
       {/* History Panel */}
       {showHistory && (
-        <div className="mb-6 bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-5 border border-zinc-800/80 animate-slideUp">
+        <div className="mb-6 bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl p-5 border border-[var(--border-subtle)] animate-slideUp transition-colors">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center">
               <div className="p-2 rounded-xl bg-blue-500/15 mr-3">
                 <History className="h-5 w-5 text-blue-400" />
               </div>
-              <h3 className="font-semibold text-white text-sm">Chat History</h3>
+              <h3 className="font-semibold text-[var(--text-primary)] text-sm">
+                Chat History
+              </h3>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -562,7 +568,7 @@ export default function ChatPage() {
               </button>
               <button
                 onClick={() => setShowHistory(false)}
-                className="p-2 text-slate-500 hover:text-white hover:bg-white/5 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -575,13 +581,13 @@ export default function ChatPage() {
                 <button
                   key={entry.id}
                   onClick={() => loadHistoryEntry(entry)}
-                  className="w-full text-left p-3 bg-zinc-800/50 hover:bg-zinc-800 rounded-xl border border-zinc-700/50 hover:border-blue-500/30 transition-all duration-200 group"
+                  className="w-full text-left p-3 bg-[var(--bg-secondary)]/50 hover:bg-[var(--hover-bg)] rounded-xl border border-[var(--border-subtle)] hover:border-blue-500/30 transition-all duration-200 group"
                   style={{ animationDelay: `${index * 50}ms` }}
                 >
-                  <p className="text-sm font-medium text-zinc-200 truncate group-hover:text-blue-300 transition-colors">
+                  <p className="text-sm font-medium text-[var(--text-secondary)] truncate group-hover:text-blue-300 transition-colors">
                     {entry.question}
                   </p>
-                  <p className="text-xs text-zinc-600 mt-1">
+                  <p className="text-xs text-[var(--text-muted)] mt-1">
                     {new Date(entry.created_at).toLocaleString()} •{" "}
                     <span className="text-blue-400/70">{entry.provider}</span>
                   </p>
@@ -590,17 +596,19 @@ export default function ChatPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-800/50 mb-3">
-                <History className="h-6 w-6 text-zinc-600" />
+              <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--bg-secondary)]/50 mb-3">
+                <History className="h-6 w-6 text-[var(--text-muted)]" />
               </div>
-              <p className="text-sm text-zinc-500">No chat history yet</p>
+              <p className="text-sm text-[var(--text-muted)]">
+                No chat history yet
+              </p>
             </div>
           )}
         </div>
       )}
 
       {/* Model Selection */}
-      <div className="mb-6 bg-zinc-900/60 backdrop-blur-sm rounded-2xl p-5 border border-zinc-800/80">
+      <div className="mb-6 bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl p-5 border border-[var(--border-subtle)] transition-colors">
         <ModelPicker
           selectedProvider={selectedProvider}
           selectedModel={selectedModel}
@@ -612,12 +620,14 @@ export default function ChatPage() {
       {/* Main Chat Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 flex-1 min-h-[500px]">
         {/* Left Sidebar - Document Filter */}
-        <div className="lg:col-span-1 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-5 overflow-y-auto custom-scrollbar max-h-[600px]">
+        <div className="lg:col-span-1 bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] p-5 overflow-y-auto custom-scrollbar max-h-[600px] transition-colors">
           <div className="flex items-center mb-4">
             <div className="p-2 rounded-xl bg-amber-500/15 mr-3">
               <FileText className="h-5 w-5 text-amber-400" />
             </div>
-            <h2 className="text-sm font-semibold text-white">Documents</h2>
+            <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+              Documents
+            </h2>
           </div>
 
           <DocumentList
@@ -638,7 +648,7 @@ export default function ChatPage() {
             )}
 
           {/* Images Section */}
-          <div className="mt-6 pt-6 border-t border-zinc-800">
+          <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
             <button
               onClick={() => setShowImages(!showImages)}
               className="w-full flex items-center justify-between mb-3"
@@ -647,7 +657,9 @@ export default function ChatPage() {
                 <div className="p-2 rounded-xl bg-fuchsia-500/15 mr-3">
                   <Image className="h-5 w-5 text-fuchsia-400" />
                 </div>
-                <h2 className="text-sm font-semibold text-white">Images</h2>
+                <h2 className="text-sm font-semibold text-[var(--text-primary)]">
+                  Images
+                </h2>
                 {selectedImageIds.length > 0 && (
                   <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30">
                     {selectedImageIds.length} selected
@@ -655,9 +667,9 @@ export default function ChatPage() {
                 )}
               </div>
               {showImages ? (
-                <ChevronUp className="h-4 w-4 text-zinc-500" />
+                <ChevronUp className="h-4 w-4 text-[var(--text-muted)]" />
               ) : (
-                <ChevronDown className="h-4 w-4 text-zinc-500" />
+                <ChevronDown className="h-4 w-4 text-[var(--text-muted)]" />
               )}
             </button>
 
@@ -665,7 +677,7 @@ export default function ChatPage() {
               <div className="space-y-3">
                 {images.length > 0 ? (
                   <>
-                    <p className="text-xs text-zinc-500 mb-2">
+                    <p className="text-xs text-[var(--text-muted)] mb-2">
                       Select images to ask questions about them
                     </p>
                     <div className="grid grid-cols-2 gap-2">
@@ -682,7 +694,7 @@ export default function ChatPage() {
                           className={`relative aspect-square rounded-lg overflow-hidden border-2 transition-all ${
                             selectedImageIds.includes(img.id)
                               ? "border-fuchsia-500 ring-2 ring-fuchsia-500/30"
-                              : "border-zinc-700 hover:border-zinc-600"
+                              : "border-[var(--border-subtle)] hover:border-[var(--text-muted)]"
                           }`}
                         >
                           <img
@@ -715,7 +727,7 @@ export default function ChatPage() {
                     {selectedImageIds.length > 0 && (
                       <button
                         onClick={() => setSelectedImageIds([])}
-                        className="w-full mt-2 text-xs text-zinc-500 hover:text-zinc-400 transition-colors"
+                        className="w-full mt-2 text-xs text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
                       >
                         Clear selection
                       </button>
@@ -734,7 +746,7 @@ export default function ChatPage() {
         </div>
 
         {/* Right Side - Chat Interface */}
-        <div className="lg:col-span-3 bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 flex flex-col min-h-[500px] max-h-[700px]">
+        <div className="lg:col-span-3 bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] flex flex-col min-h-[500px] max-h-[700px] transition-colors">
           {/* Messages Area */}
           <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
             {displayMessages.length === 0 ? (
@@ -743,18 +755,18 @@ export default function ChatPage() {
                   <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-500/20 to-fuchsia-500/20 mb-5">
                     <Sparkles className="h-8 w-8 text-violet-400" />
                   </div>
-                  <h3 className="text-lg font-semibold text-white mb-2">
+                  <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
                     Start a Conversation
                   </h3>
-                  <p className="text-zinc-500 text-sm max-w-sm mx-auto">
+                  <p className="text-[var(--text-muted)] text-sm max-w-sm mx-auto">
                     Ask questions about your documents or select images to
                     analyze
                   </p>
                   <div className="mt-5 flex flex-wrap justify-center gap-2">
-                    <span className="px-3 py-1.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-700/50">
+                    <span className="px-3 py-1.5 text-xs rounded-full bg-[var(--bg-secondary)]/50 text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                       "What is our leave policy?"
                     </span>
-                    <span className="px-3 py-1.5 text-xs rounded-full bg-zinc-800/50 text-zinc-400 border border-zinc-700/50">
+                    <span className="px-3 py-1.5 text-xs rounded-full bg-[var(--bg-secondary)]/50 text-[var(--text-secondary)] border border-[var(--border-subtle)]">
                       "Describe this image"
                     </span>
                   </div>
@@ -769,7 +781,7 @@ export default function ChatPage() {
           </div>
 
           {/* Input Area */}
-          <div className="border-t border-zinc-800 p-4">
+          <div className="border-t border-[var(--border-subtle)] p-4">
             <ChatBox onSendMessage={handleSendMessage} disabled={isStreaming} />
           </div>
         </div>

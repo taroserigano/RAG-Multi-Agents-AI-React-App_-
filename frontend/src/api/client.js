@@ -5,7 +5,7 @@
 import axios from "axios";
 
 const API_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
+  import.meta.env.VITE_API_BASE_URL || "http://localhost:8001";
 
 // Create axios instance with default config
 const api = axios.create({
@@ -65,7 +65,8 @@ export const uploadDocument = async (file) => {
  */
 export const getDocuments = async () => {
   const response = await api.get("/api/docs");
-  return response.data || [];
+  // Backend returns { documents: [...] }, extract the array
+  return response.data?.documents || [];
 };
 
 /**
@@ -303,7 +304,11 @@ export const getImages = async (skip = 0, limit = 50) => {
   const response = await api.get("/api/images/", {
     params: { skip, limit },
   });
-  return response.data || [];
+  // Ensure we always return an array
+  const data = response.data;
+  if (Array.isArray(data)) return data;
+  if (data?.images) return data.images;
+  return [];
 };
 
 /**
@@ -434,6 +439,158 @@ export const streamMultimodalChat = (
   fetchStream();
 
   return () => controller.abort();
+};
+
+// ============================================================================
+// Compliance API
+// ============================================================================
+
+/**
+ * Perform a compliance check combining documents and images
+ * @param {Object} request - Compliance check request
+ * @param {string} request.user_id - User identifier
+ * @param {string} request.query - Compliance question
+ * @param {string} request.provider - LLM provider
+ * @param {string[]} [request.doc_ids] - Document IDs to check against
+ * @param {string[]} [request.image_ids] - Image IDs to analyze
+ * @returns {Promise} - Compliance report
+ */
+export const checkCompliance = async (request) => {
+  const response = await api.post("/api/compliance/check", request);
+  return response.data;
+};
+
+/**
+ * Stream a compliance check with progress updates
+ * @param {Object} request - Compliance check request
+ * @param {Object} callbacks - Event callbacks
+ * @returns {Function} - Cleanup function to abort
+ */
+export const streamComplianceCheck = (
+  request,
+  { onStatus, onCitations, onToken, onReport, onDone, onError },
+) => {
+  const controller = new AbortController();
+
+  const fetchStream = async () => {
+    try {
+      const response = await fetch(
+        `${API_BASE_URL}/api/compliance/check/stream`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(request),
+          signal: controller.signal,
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value, { stream: true });
+        buffer += chunk;
+
+        const lines = buffer.split("\n\n");
+        buffer = lines.pop() || "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (trimmed.startsWith("data: ")) {
+            try {
+              const event = JSON.parse(trimmed.slice(6));
+
+              switch (event.type) {
+                case "status":
+                  onStatus?.(event.data);
+                  break;
+                case "citations":
+                  onCitations?.(event.data);
+                  break;
+                case "token":
+                  onToken?.(event.data);
+                  break;
+                case "report":
+                  onReport?.(event.data);
+                  break;
+                case "done":
+                  onDone?.();
+                  break;
+                case "error":
+                  onError?.(new Error(event.data));
+                  break;
+              }
+            } catch (e) {
+              // Skip malformed JSON
+            }
+          }
+        }
+      }
+    } catch (error) {
+      if (error.name !== "AbortError") {
+        onError?.(error);
+      }
+    }
+  };
+
+  fetchStream();
+
+  return () => controller.abort();
+};
+
+/**
+ * Get compliance check history for a user
+ * @param {string} userId - User identifier
+ * @param {number} [limit=20] - Max results
+ * @returns {Promise} - Array of compliance history items
+ */
+export const getComplianceHistory = async (userId, limit = 20) => {
+  const response = await api.get(`/api/compliance/history/${userId}`, {
+    params: { limit },
+  });
+  return response.data;
+};
+
+/**
+ * Get a specific compliance report
+ * @param {string} reportId - Report ID
+ * @param {string} [format="json"] - Output format (json or markdown)
+ * @returns {Promise} - Compliance report
+ */
+export const getComplianceReport = async (reportId, format = "json") => {
+  const response = await api.get(`/api/compliance/report/${reportId}`, {
+    params: { format },
+  });
+  return response.data;
+};
+
+/**
+ * Delete a compliance report
+ * @param {string} reportId - Report ID
+ * @returns {Promise} - Delete confirmation
+ */
+export const deleteComplianceReport = async (reportId) => {
+  const response = await api.delete(`/api/compliance/report/${reportId}`);
+  return response.data;
+};
+
+/**
+ * Get available compliance status options
+ * @returns {Promise} - Status and severity options
+ */
+export const getComplianceStatusOptions = async () => {
+  const response = await api.get("/api/compliance/status-options");
+  return response.data;
 };
 
 export default api;

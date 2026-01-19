@@ -63,24 +63,24 @@ export default function DocumentPreview({ docId, filename, isOpen, onClose }) {
       />
 
       {/* Modal */}
-      <div className="relative z-[10000] w-full max-w-4xl max-h-[85vh] mx-4 bg-zinc-900 rounded-2xl border border-zinc-700 shadow-[0_0_60px_rgba(139,92,246,0.15)] flex flex-col animate-scaleIn">
+      <div className="relative z-[10000] w-full max-w-4xl max-h-[85vh] mx-4 bg-[var(--bg-secondary)] rounded-2xl border border-[var(--border-subtle)] shadow-[0_0_60px_rgba(139,92,246,0.15)] flex flex-col animate-scaleIn">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-800">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[var(--border-subtle)]">
           <div className="flex items-center min-w-0">
             <div className="p-2 rounded-xl bg-violet-500/15 mr-3 flex-shrink-0">
               <FileText className="h-5 w-5 text-violet-400" />
             </div>
             <div className="min-w-0">
-              <h2 className="text-lg font-semibold text-white truncate">
+              <h2 className="text-lg font-semibold text-[var(--text-primary)] truncate">
                 {filename}
               </h2>
               {docContent && (
                 <div className="flex items-center gap-4 mt-1">
-                  <span className="text-xs text-zinc-500 flex items-center">
+                  <span className="text-xs text-[var(--text-muted)] flex items-center">
                     <Layers className="h-3 w-3 mr-1" />
                     {docContent.chunk_count} chunks
                   </span>
-                  <span className="text-xs text-zinc-500 flex items-center">
+                  <span className="text-xs text-[var(--text-muted)] flex items-center">
                     <Calendar className="h-3 w-3 mr-1" />
                     {new Date(docContent.created_at).toLocaleDateString()}
                   </span>
@@ -94,7 +94,7 @@ export default function DocumentPreview({ docId, filename, isOpen, onClose }) {
             {docContent?.content && (
               <button
                 onClick={handleCopy}
-                className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+                className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
                 title="Copy content"
               >
                 {copied ? (
@@ -108,7 +108,7 @@ export default function DocumentPreview({ docId, filename, isOpen, onClose }) {
             {/* Close button */}
             <button
               onClick={onClose}
-              className="p-2 text-zinc-400 hover:text-white hover:bg-zinc-800 rounded-lg transition-colors"
+              className="p-2 text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
             >
               <X className="h-5 w-5" />
             </button>
@@ -120,7 +120,7 @@ export default function DocumentPreview({ docId, filename, isOpen, onClose }) {
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20">
               <Loader2 className="h-8 w-8 text-violet-400 animate-spin mb-4" />
-              <p className="text-sm text-zinc-400">
+              <p className="text-sm text-[var(--text-secondary)]">
                 Loading document content...
               </p>
             </div>
@@ -132,36 +132,40 @@ export default function DocumentPreview({ docId, filename, isOpen, onClose }) {
               <p className="text-sm text-red-400 font-medium">
                 Failed to load document
               </p>
-              <p className="text-xs text-zinc-500 mt-1">{error.message}</p>
+              <p className="text-xs text-[var(--text-muted)] mt-1">
+                {error.message}
+              </p>
             </div>
           ) : docContent?.content ? (
-            <div className="prose prose-invert prose-zinc max-w-none">
-              <pre className="whitespace-pre-wrap text-sm text-zinc-300 font-sans leading-relaxed bg-zinc-800/50 rounded-xl p-6 border border-zinc-700/50">
+            <div className="prose prose-invert max-w-none">
+              <pre className="whitespace-pre-wrap text-sm text-[var(--text-secondary)] font-sans leading-relaxed bg-[var(--bg-primary)]/50 rounded-xl p-6 border border-[var(--border-subtle)]">
                 {docContent.content}
               </pre>
             </div>
           ) : (
             <div className="flex flex-col items-center justify-center py-20">
-              <div className="p-3 rounded-xl bg-zinc-800/50 mb-4">
-                <FileText className="h-8 w-8 text-zinc-600" />
+              <div className="p-3 rounded-xl bg-[var(--bg-secondary)]/50 mb-4">
+                <FileText className="h-8 w-8 text-[var(--text-muted)]" />
               </div>
-              <p className="text-sm text-zinc-400">No content available</p>
+              <p className="text-sm text-[var(--text-secondary)]">
+                No content available
+              </p>
             </div>
           )}
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-zinc-800 flex items-center justify-between">
-          <p className="text-xs text-zinc-500">
+        <div className="px-6 py-4 border-t border-[var(--border-subtle)] flex items-center justify-between">
+          <p className="text-xs text-[var(--text-muted)]">
             Press{" "}
-            <kbd className="px-1.5 py-0.5 bg-zinc-800 rounded text-zinc-400">
+            <kbd className="px-1.5 py-0.5 bg-[var(--bg-secondary)] rounded text-[var(--text-secondary)]">
               Esc
             </kbd>{" "}
             to close
           </p>
           <button
             onClick={onClose}
-            className="px-4 py-2 text-sm font-medium text-zinc-300 hover:text-white bg-zinc-800 hover:bg-zinc-700 rounded-lg transition-colors"
+            className="px-4 py-2 text-sm font-medium text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-secondary)] hover:bg-[var(--hover-bg)] rounded-lg transition-colors"
           >
             Close
           </button>

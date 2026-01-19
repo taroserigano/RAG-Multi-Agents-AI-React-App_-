@@ -171,10 +171,21 @@ async def chat_stream(
         }
         logger.info(f"RAG options: {rag_options}")
     
+    # Store request data for use in generator (db session will be closed after this function returns)
+    request_data = {
+        "user_id": request.user_id,
+        "provider": request.provider,
+        "model": request.model,
+        "question": request.question,
+        "image_ids": request.image_ids if is_multimodal else None,
+        "doc_ids": request.doc_ids,
+        "top_k": request.top_k or 5
+    }
+    
     def generate():
         full_answer = ""
         citations = []
-        model_info = {"provider": request.provider, "name": request.model or "default"}
+        model_info = {"provider": request_data["provider"], "name": request_data["model"] or "default"}
         
         try:
             # If images are selected, use image-focused chat
@@ -197,12 +208,12 @@ Be specific and reference the image details when answering."""
                 # Create messages for LLM
                 messages = [
                     {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": f"{image_context}\n\n=== USER QUESTION ===\n{request.question}"}
+                    {"role": "user", "content": f"{image_context}\n\n=== USER QUESTION ===\n{request_data['question']}"}
                 ]
                 
                 # Get streaming LLM and generate response
-                llm = get_streaming_llm(request.provider, request.model)
-                model_info = {"provider": request.provider, "name": request.model or llm.model if hasattr(llm, 'model') else "default"}
+                llm = get_streaming_llm(request_data["provider"], request_data["model"])
+                model_info = {"provider": request_data["provider"], "name": request_data["model"] or llm.model if hasattr(llm, 'model') else "default"}
                 
                 for token in llm.stream(messages):
                     if hasattr(token, 'content'):
@@ -218,11 +229,11 @@ Be specific and reference the image details when answering."""
             else:
                 # Normal document RAG flow
                 for event in run_rag_pipeline_streaming(
-                    question=request.question,
-                    provider=request.provider,
-                    model=request.model,
-                    doc_ids=request.doc_ids,
-                    top_k=request.top_k or 5,
+                    question=request_data["question"],
+                    provider=request_data["provider"],
+                    model=request_data["model"],
+                    doc_ids=request_data["doc_ids"],
+                    top_k=request_data["top_k"],
                     rag_options=rag_options
                 ):
                     if event["type"] == "token":
@@ -244,21 +255,29 @@ Be specific and reference the image details when answering."""
             # Send completion signal
             yield f"data: {json.dumps({'type': 'done', 'data': {'model': model_info}})}\n\n"
             
-            # Save to audit log
+            # Save to audit log with a NEW database session
+            # (original session is closed after the route function returns)
             try:
-                cited_doc_ids = list(set([c["doc_id"] for c in citations])) if citations else []
-                cited_image_ids = request.image_ids if is_multimodal else None
-                audit = ChatAudit(
-                    user_id=request.user_id,
-                    provider=request.provider,
-                    model=request.model or model_info["name"],
-                    question=request.question,
-                    answer=full_answer,
-                    cited_doc_ids=cited_doc_ids if cited_doc_ids else None,
-                    cited_image_ids=cited_image_ids
-                )
-                db.add(audit)
-                db.commit()
+                from app.db.session import SessionLocal, DB_AVAILABLE
+                if DB_AVAILABLE and SessionLocal:
+                    audit_db = SessionLocal()
+                    try:
+                        cited_doc_ids = list(set([c["doc_id"] for c in citations])) if citations else []
+                        cited_image_ids = request_data["image_ids"]
+                        audit = ChatAudit(
+                            user_id=request_data["user_id"],
+                            provider=request_data["provider"],
+                            model=request_data["model"] or model_info["name"],
+                            question=request_data["question"],
+                            answer=full_answer,
+                            cited_doc_ids=cited_doc_ids if cited_doc_ids else None,
+                            cited_image_ids=cited_image_ids
+                        )
+                        audit_db.add(audit)
+                        audit_db.commit()
+                        logger.debug("Chat audit saved successfully")
+                    finally:
+                        audit_db.close()
             except Exception as e:
                 logger.error(f"Error saving chat audit: {e}")
                 

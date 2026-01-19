@@ -129,3 +129,51 @@ class ChatAudit(Base):
     
     def __repr__(self):
         return f"<ChatAudit(id={self.id}, user_id={self.user_id}, provider={self.provider})>"
+
+
+class ComplianceReport(Base):
+    """
+    Compliance check report table.
+    Stores compliance analysis results combining documents and images.
+    """
+    __tablename__ = "compliance_reports"
+    
+    # Report ID (e.g., CR-abc123)
+    id = Column(String, primary_key=True)
+    
+    # User who requested the check
+    user_id = Column(String, nullable=False, index=True)
+    
+    # Report title
+    title = Column(String, nullable=False)
+    
+    # Original compliance query
+    query = Column(Text, nullable=False)
+    
+    # Overall compliance status
+    overall_status = Column(String, nullable=False)  # compliant, non_compliant, partial, needs_review
+    
+    # Executive summary
+    summary = Column(Text, nullable=True)
+    
+    # Detailed findings as JSON array
+    findings_json = Column(JSON, nullable=True)
+    
+    # Document IDs that were analyzed
+    document_ids = Column(JSON, nullable=True)
+    
+    # Image IDs that were analyzed
+    image_ids = Column(JSON, nullable=True)
+    
+    # LLM provider used
+    provider = Column(String, nullable=True)
+    
+    # Specific model name
+    model = Column(String, nullable=True)
+    
+    # Timestamp
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    
+    def __repr__(self):
+        return f"<ComplianceReport(id={self.id}, status={self.overall_status})>"
+

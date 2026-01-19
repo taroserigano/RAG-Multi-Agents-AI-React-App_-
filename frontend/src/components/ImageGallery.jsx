@@ -49,7 +49,7 @@ export default function ImageGallery({
         {[...Array(4)].map((_, i) => (
           <div
             key={i}
-            className="aspect-square bg-gray-800 rounded-lg animate-pulse"
+            className="aspect-square bg-[var(--bg-secondary)] rounded-lg animate-pulse"
           />
         ))}
       </div>
@@ -58,7 +58,7 @@ export default function ImageGallery({
 
   if (images.length === 0) {
     return (
-      <div className="text-center py-12 text-gray-500">
+      <div className="text-center py-12 text-[var(--text-muted)]">
         <svg
           className="w-12 h-12 mx-auto mb-3 opacity-50"
           fill="none"
@@ -94,8 +94,8 @@ export default function ImageGallery({
                 ${selectable ? "cursor-pointer" : ""}
                 ${
                   isSelected
-                    ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-gray-900"
-                    : "hover:ring-1 hover:ring-gray-600"
+                    ? "ring-2 ring-purple-500 ring-offset-2 ring-offset-[var(--bg-primary)]"
+                    : "hover:ring-1 hover:ring-[var(--border-subtle)]"
                 }
                 ${isDeleting ? "opacity-50" : ""}
               `}
@@ -154,7 +154,7 @@ export default function ImageGallery({
                   {image.filename}
                 </p>
                 {image.description && (
-                  <p className="text-gray-300 text-xs truncate mt-1">
+                  <p className="text-[var(--text-secondary)] text-xs truncate mt-1">
                     {image.description}
                   </p>
                 )}
@@ -214,7 +214,7 @@ export default function ImageGallery({
                   setPreviewImage(image);
                 }}
                 className="absolute bottom-2 right-2 p-1.5 rounded-full
-                           bg-gray-800/80 hover:bg-gray-700 text-white
+                           bg-[var(--bg-secondary)]/80 hover:bg-[var(--bg-secondary)] text-[var(--text-primary)]
                            opacity-0 group-hover:opacity-100 transition-opacity"
               >
                 <svg
@@ -243,7 +243,7 @@ export default function ImageGallery({
           onClick={() => setPreviewImage(null)}
         >
           <div
-            className="relative max-w-4xl max-h-[90vh] bg-gray-900 rounded-xl overflow-hidden"
+            className="relative max-w-4xl max-h-[90vh] bg-[var(--bg-secondary)] rounded-xl overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             <img
@@ -257,16 +257,16 @@ export default function ImageGallery({
               className="max-w-full max-h-[80vh] object-contain"
             />
 
-            <div className="p-4 border-t border-gray-800">
-              <h3 className="text-white font-medium">
+            <div className="p-4 border-t border-[var(--border-subtle)]">
+              <h3 className="text-[var(--text-primary)] font-medium">
                 {previewImage.filename}
               </h3>
               {previewImage.description && (
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-[var(--text-secondary)] text-sm mt-1">
                   {previewImage.description}
                 </p>
               )}
-              <div className="flex items-center gap-4 mt-2 text-xs text-gray-500">
+              <div className="flex items-center gap-4 mt-2 text-xs text-[var(--text-muted)]">
                 <span>
                   {previewImage.width}x{previewImage.height}
                 </span>
@@ -277,7 +277,7 @@ export default function ImageGallery({
 
             <button
               onClick={() => setPreviewImage(null)}
-              className="absolute top-4 right-4 p-2 rounded-full bg-gray-800 hover:bg-gray-700 text-white"
+              className="absolute top-4 right-4 p-2 rounded-full bg-[var(--bg-secondary)] hover:bg-[var(--hover-bg)] text-[var(--text-primary)]"
             >
               <svg
                 className="w-5 h-5"

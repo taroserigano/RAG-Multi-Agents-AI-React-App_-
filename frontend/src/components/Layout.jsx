@@ -1,17 +1,28 @@
 /**
  * Layout component with navigation and common structure.
- * Modern dark theme with glassmorphism effects.
+ * Supports dark/light theme with glassmorphism effects.
  */
 import { Link, useLocation } from "react-router-dom";
-import { FileText, MessageSquare, Sparkles, Zap, Circle } from "lucide-react";
+import {
+  FileText,
+  MessageSquare,
+  Sparkles,
+  Zap,
+  Circle,
+  ShieldCheck,
+  Moon,
+  Sun,
+} from "lucide-react";
+import { useTheme } from "../contexts/ThemeContext";
 
 export default function Layout({ children }) {
   const location = useLocation();
+  const { theme, toggleTheme } = useTheme();
 
   const isActive = (path) => location.pathname === path;
 
   return (
-    <div className="min-h-screen bg-[#09090b] relative overflow-hidden">
+    <div className="min-h-screen bg-[var(--bg-primary)] relative overflow-hidden transition-colors duration-300">
       {/* Animated background - Subtle aurora effect */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         {/* Primary gradient orbs */}
@@ -25,12 +36,14 @@ export default function Layout({ children }) {
           style={{ animationDelay: "2s" }}
         />
 
-        {/* Grid pattern overlay */}
-        <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,black_40%,transparent_100%)]" />
+        {/* Grid pattern overlay - only in dark mode */}
+        {theme === "dark" && (
+          <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:64px_64px] [mask-image:radial-gradient(ellipse_50%_50%_at_50%_50%,black_40%,transparent_100%)]" />
+        )}
       </div>
 
       {/* Top Navigation */}
-      <nav className="relative z-10 border-b border-white/[0.04] bg-[#09090b]/80 backdrop-blur-xl">
+      <nav className="relative z-10 border-b border-[var(--border-subtle)] bg-[var(--bg-primary)]/80 backdrop-blur-xl transition-colors duration-300">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo/Title */}
@@ -43,10 +56,10 @@ export default function Layout({ children }) {
               </div>
               <div className="ml-3.5">
                 <h1 className="text-lg font-bold tracking-tight">
-                  <span className="text-white">Policy</span>
+                  <span className="text-[var(--text-primary)]">Policy</span>
                   <span className="gradient-text-vibrant">RAG</span>
                 </h1>
-                <p className="text-[10px] text-zinc-500 font-medium tracking-wide uppercase">
+                <p className="text-[10px] text-[var(--text-muted)] font-medium tracking-wide uppercase">
                   AI Intelligence
                 </p>
               </div>
@@ -58,8 +71,8 @@ export default function Layout({ children }) {
                 to="/upload"
                 className={`relative flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive("/upload")
-                    ? "text-white"
-                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]"
                 }`}
               >
                 {isActive("/upload") && (
@@ -75,8 +88,8 @@ export default function Layout({ children }) {
                 to="/chat"
                 className={`relative flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
                   isActive("/chat")
-                    ? "text-white"
-                    : "text-zinc-400 hover:text-white hover:bg-white/[0.04]"
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]"
                 }`}
               >
                 {isActive("/chat") && (
@@ -89,8 +102,42 @@ export default function Layout({ children }) {
                 <Sparkles className="relative h-3 w-3 ml-1.5 text-amber-400" />
               </Link>
 
+              <Link
+                to="/compliance"
+                className={`relative flex items-center px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
+                  isActive("/compliance")
+                    ? "text-[var(--text-primary)]"
+                    : "text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)]"
+                }`}
+              >
+                {isActive("/compliance") && (
+                  <div className="absolute inset-0 bg-gradient-to-r from-emerald-500/15 to-cyan-500/15 rounded-xl border border-emerald-500/20" />
+                )}
+                <ShieldCheck
+                  className={`relative h-4 w-4 mr-2 ${isActive("/compliance") ? "text-emerald-400" : ""}`}
+                />
+                <span className="relative">Compliance</span>
+              </Link>
+
               {/* Divider */}
-              <div className="w-px h-6 bg-white/[0.06] mx-2" />
+              <div className="w-px h-6 bg-[var(--border-subtle)] mx-2" />
+
+              {/* Theme Toggle */}
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-xl text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--hover-bg)] transition-all duration-200"
+                title={
+                  theme === "dark"
+                    ? "Switch to light mode"
+                    : "Switch to dark mode"
+                }
+              >
+                {theme === "dark" ? (
+                  <Sun className="h-4 w-4" />
+                ) : (
+                  <Moon className="h-4 w-4" />
+                )}
+              </button>
 
               {/* Status indicator */}
               <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20">

@@ -5,6 +5,7 @@ Provides SQLAlchemy engine and session factory with dependency injection support
 from sqlalchemy import create_engine
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy.pool import QueuePool
 from typing import Generator, Optional
 import logging
 
@@ -13,17 +14,23 @@ from app.core.config import get_settings
 settings = get_settings()
 logger = logging.getLogger(__name__)
 
-# Create SQLAlchemy engine
-# pool_pre_ping ensures connections are valid before use
+# Create SQLAlchemy engine with robust connection pooling
+# These settings help prevent connection issues and server crashes
 try:
     engine = create_engine(
         settings.database_url,
-        pool_pre_ping=True,
-        echo=settings.debug  # Log SQL queries in debug mode
+        poolclass=QueuePool,
+        pool_pre_ping=True,       # Check connection validity before use
+        pool_size=5,              # Maintain 5 connections in pool
+        max_overflow=10,          # Allow up to 10 additional connections
+        pool_timeout=30,          # Wait up to 30s for a connection
+        pool_recycle=1800,        # Recycle connections every 30 minutes
+        echo=settings.debug       # Log SQL queries in debug mode
     )
     # Session factory
     SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
     DB_AVAILABLE = True
+    logger.info("Database engine created with connection pooling")
 except Exception as e:
     logger.warning(f"Database not available: {e}")
     engine = None

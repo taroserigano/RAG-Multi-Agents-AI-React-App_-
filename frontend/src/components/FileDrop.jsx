@@ -87,7 +87,7 @@ export default function FileDrop({
               ? "border-red-500/50 bg-red-500/10"
               : selectedFile
                 ? "border-emerald-500/50 bg-emerald-500/10"
-                : "border-zinc-700/50 bg-zinc-800/30 hover:border-violet-500/50 hover:bg-violet-500/5"
+                : "border-[var(--border-subtle)] bg-[var(--bg-secondary)]/30 hover:border-violet-500/50 hover:bg-violet-500/5"
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -132,21 +132,21 @@ export default function FileDrop({
                     {selectedFile.name}
                   </span>
                 </div>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   {(selectedFile.size / 1024 / 1024).toFixed(2)} MB
                 </p>
-                <p className="text-xs text-zinc-600">
+                <p className="text-xs text-[var(--text-muted)]">
                   Click or drag to replace
                 </p>
               </div>
             ) : (
               <>
-                <p className="text-base font-semibold text-white mb-1">
+                <p className="text-base font-semibold text-[var(--text-primary)] mb-1">
                   {dragActive
                     ? "Drop your file here"
                     : "Drop your file here or click to browse"}
                 </p>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   Supported: PDF, TXT (max {maxSizeMB}MB)
                 </p>
               </>

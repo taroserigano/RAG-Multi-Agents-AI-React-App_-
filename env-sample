@@ -78,6 +78,12 @@ ALLOW_REDLINES=true
 # CORS
 CORS_ORIGINS=http://localhost:5173
 
+# --- Redis Cache (Optional - gracefully degrades if unavailable) ---
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
+CACHE_ENABLED=true
 
 
 DATABASE_URL="postgres://neondb_owner:wG6cVDxTdf2H@ep-square-unit-a5m59kxt-pooler.us-east-2.aws.neon.tech/neondb?sslmode=require"

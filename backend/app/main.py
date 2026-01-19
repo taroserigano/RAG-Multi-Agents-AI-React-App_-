@@ -7,6 +7,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from contextlib import asynccontextmanager
 import time
+import signal
+import sys
+import asyncio
 
 from app.core.config import get_settings
 from app.core.logging import setup_logging, get_logger
@@ -14,12 +17,25 @@ from app.db.migrations import init_db
 from app.api.routes_docs import router as docs_router
 from app.api.routes_chat import router as chat_router
 from app.api.routes_images import router as images_router
+from app.api.routes_cache import router as cache_router
+from app.api.routes_compliance import router as compliance_router
 
 settings = get_settings()
 
 # Setup logging
 setup_logging(level="DEBUG" if settings.debug else "INFO")
 logger = get_logger(__name__)
+
+# Flag to track shutdown state
+_shutdown_requested = False
+
+
+def handle_shutdown_signal(signum, frame):
+    """Handle shutdown signals gracefully."""
+    global _shutdown_requested
+    signal_name = signal.Signals(signum).name
+    logger.info(f"Received {signal_name} signal, initiating graceful shutdown...")
+    _shutdown_requested = True
 
 
 @asynccontextmanager
@@ -28,9 +44,17 @@ async def lifespan(app: FastAPI):
     Application lifespan manager.
     Runs on startup and shutdown.
     """
+    # Setup signal handlers for graceful shutdown
+    if sys.platform != "win32":
+        # Unix-like systems
+        signal.signal(signal.SIGTERM, handle_shutdown_signal)
+        signal.signal(signal.SIGINT, handle_shutdown_signal)
+    
     # Startup
+    logger.info("=" * 60)
     logger.info("Starting Policy RAG API...")
     logger.info(f"Debug mode: {settings.debug}")
+    logger.info("=" * 60)
     
     # Initialize database tables
     try:
@@ -40,10 +64,46 @@ async def lifespan(app: FastAPI):
         logger.warning(f"Failed to initialize database: {e}")
         logger.warning("Continuing without database (audit logging will be disabled)")
     
+    # Initialize cache connection (non-blocking)
+    try:
+        from app.core.cache import get_cache
+        cache = get_cache()
+        if cache.is_connected:
+            logger.info("Redis cache connected")
+        else:
+            logger.info("Running with in-memory cache fallback")
+    except Exception as e:
+        logger.warning(f"Cache initialization warning: {e}")
+    
+    logger.info("Server startup complete - ready to accept requests")
+    
     yield
     
     # Shutdown
+    logger.info("=" * 60)
     logger.info("Shutting down Policy RAG API...")
+    
+    # Cleanup database connections
+    try:
+        from app.db.session import engine, DB_AVAILABLE
+        if DB_AVAILABLE and engine:
+            engine.dispose()
+            logger.info("Database connections closed")
+    except Exception as e:
+        logger.warning(f"Error closing database connections: {e}")
+    
+    # Cleanup cache connections
+    try:
+        from app.core.cache import get_cache
+        cache = get_cache()
+        if hasattr(cache, 'close'):
+            cache.close()
+            logger.info("Cache connections closed")
+    except Exception as e:
+        logger.warning(f"Error closing cache connections: {e}")
+    
+    logger.info("Shutdown complete")
+    logger.info("=" * 60)
 
 
 # Create FastAPI app
@@ -125,6 +185,8 @@ async def check_api_key(request: Request, call_next):
 app.include_router(docs_router)
 app.include_router(chat_router)
 app.include_router(images_router)
+app.include_router(cache_router)
+app.include_router(compliance_router)
 
 
 @app.get("/")
@@ -137,6 +199,9 @@ async def root():
         "endpoints": {
             "docs": "/api/docs",
             "chat": "/api/chat",
+            "images": "/api/images",
+            "compliance": "/api/compliance",
+            "cache": "/api/cache",
             "openapi": "/docs"
         }
     }
@@ -181,5 +246,10 @@ if __name__ == "__main__":
         "app.main:app",
         host="0.0.0.0",
         port=8000,
-        reload=settings.debug
+        reload=settings.debug,
+        log_level="debug" if settings.debug else "info",
+        timeout_keep_alive=65,  # Keep connections alive for SSE streaming
+        timeout_notify=30,      # Notify timeout
+        access_log=True,
+        workers=1               # Single worker for development (avoid port conflicts)
     )

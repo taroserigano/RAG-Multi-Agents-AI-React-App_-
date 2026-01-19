@@ -60,7 +60,7 @@ export default function ModelPicker({
   return (
     <div className="space-y-5">
       <div>
-        <label className="flex items-center text-sm font-medium text-zinc-300 mb-3">
+        <label className="flex items-center text-sm font-medium text-[var(--text-secondary)] mb-3">
           <Zap className="h-4 w-4 mr-2 text-amber-400" />
           Select LLM Provider
         </label>
@@ -77,28 +77,28 @@ export default function ModelPicker({
                 className={`relative flex items-center p-3.5 rounded-xl border transition-all duration-200 group overflow-hidden ${
                   isSelected
                     ? `border-transparent bg-gradient-to-br ${provider.gradient}`
-                    : "border-zinc-700/50 bg-zinc-800/50 hover:border-zinc-600 hover:bg-zinc-800"
+                    : "border-[var(--border-subtle)] bg-[var(--bg-secondary)]/50 hover:border-[var(--text-muted)] hover:bg-[var(--hover-bg)]"
                 }`}
               >
                 <div
                   className={`relative z-10 p-2 rounded-lg mr-3 ${
                     isSelected
                       ? "bg-white/20"
-                      : "bg-zinc-700/50 group-hover:bg-zinc-700"
+                      : "bg-[var(--bg-secondary)]/50 group-hover:bg-[var(--bg-secondary)]"
                   } transition-colors`}
                 >
                   <Icon
-                    className={`h-4 w-4 ${isSelected ? "text-white" : "text-zinc-400 group-hover:text-zinc-200"}`}
+                    className={`h-4 w-4 ${isSelected ? "text-white" : "text-[var(--text-muted)] group-hover:text-[var(--text-secondary)]"}`}
                   />
                 </div>
                 <div className="relative z-10 text-left">
                   <div
-                    className={`text-sm font-semibold ${isSelected ? "text-white" : "text-zinc-300 group-hover:text-white"}`}
+                    className={`text-sm font-semibold ${isSelected ? "text-white" : "text-[var(--text-secondary)] group-hover:text-[var(--text-primary)]"}`}
                   >
                     {provider.name}
                   </div>
                   <div
-                    className={`text-xs ${isSelected ? "text-white/70" : "text-zinc-500"}`}
+                    className={`text-xs ${isSelected ? "text-white/70" : "text-[var(--text-muted)]"}`}
                   >
                     {provider.description}
                   </div>
@@ -118,9 +118,10 @@ export default function ModelPicker({
       <div>
         <label
           htmlFor="custom-model"
-          className="block text-sm font-medium text-zinc-300 mb-2"
+          className="block text-sm font-medium text-[var(--text-secondary)] mb-2"
         >
-          Model Name <span className="text-zinc-600">(optional)</span>
+          Model Name{" "}
+          <span className="text-[var(--text-muted)]">(optional)</span>
         </label>
         <input
           id="custom-model"
@@ -128,9 +129,9 @@ export default function ModelPicker({
           value={selectedModel || ""}
           onChange={handleModelChange}
           placeholder={getPlaceholder()}
-          className="w-full px-4 py-2.5 bg-zinc-800/50 border border-zinc-700/50 rounded-xl text-white text-sm placeholder-zinc-500 focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
+          className="w-full px-4 py-2.5 bg-[var(--bg-secondary)]/50 border border-[var(--border-subtle)] rounded-xl text-[var(--text-primary)] text-sm placeholder-[var(--text-muted)] focus:outline-none focus:border-violet-500/50 focus:ring-1 focus:ring-violet-500/20 transition-all"
         />
-        <p className="mt-2 text-xs text-zinc-600">
+        <p className="mt-2 text-xs text-[var(--text-muted)]">
           Specify a custom model or leave empty for default
         </p>
       </div>

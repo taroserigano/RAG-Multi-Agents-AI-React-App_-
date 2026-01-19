@@ -12,6 +12,7 @@ import {
 } from "lucide-react";
 import { useDeleteDocument, useBulkDeleteDocuments } from "../hooks/useApi";
 import DocumentPreview from "./DocumentPreview";
+import { DocumentListSkeleton } from "./Skeleton";
 
 export default function DocumentList({
   documents,
@@ -95,13 +96,7 @@ export default function DocumentList({
   };
 
   if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="relative">
-          <div className="w-8 h-8 rounded-full border-2 border-violet-500/20 border-t-violet-500 animate-spin" />
-        </div>
-      </div>
-    );
+    return <DocumentListSkeleton count={4} />;
   }
 
   if (error) {
@@ -123,11 +118,13 @@ export default function DocumentList({
   if (!documents || documents.length === 0) {
     return (
       <div className="text-center p-8">
-        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-zinc-800/50 mb-3">
-          <File className="h-6 w-6 text-zinc-600" />
+        <div className="inline-flex items-center justify-center w-12 h-12 rounded-xl bg-[var(--bg-secondary)]/50 mb-3">
+          <File className="h-6 w-6 text-[var(--text-muted)]" />
         </div>
-        <p className="text-sm text-zinc-400">No documents uploaded yet</p>
-        <p className="text-xs text-zinc-600 mt-1">
+        <p className="text-sm text-[var(--text-secondary)]">
+          No documents uploaded yet
+        </p>
+        <p className="text-xs text-[var(--text-muted)] mt-1">
           Upload documents to get started
         </p>
       </div>
@@ -170,7 +167,7 @@ export default function DocumentList({
               className={`flex items-start p-3 rounded-xl border transition-all duration-200 group cursor-pointer ${
                 isSelected
                   ? "bg-amber-500/10 border-amber-500/30"
-                  : "bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-600"
+                  : "bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] hover:border-[var(--border-subtle)]"
               }`}
               onClick={() => handleToggle(doc.id)}
               style={{ animationDelay: `${index * 50}ms` }}
@@ -180,7 +177,7 @@ export default function DocumentList({
                 className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5 ${
                   isSelected
                     ? "bg-gradient-to-br from-amber-500 to-orange-500 border-transparent"
-                    : "border-zinc-600 group-hover:border-amber-500/50"
+                    : "border-[var(--border-subtle)] group-hover:border-amber-500/50"
                 }`}
               >
                 {isSelected && (
@@ -203,19 +200,19 @@ export default function DocumentList({
               <div className="ml-3 flex-1 min-w-0">
                 <div className="flex items-start">
                   <File
-                    className={`h-3.5 w-3.5 mr-2 mt-0.5 flex-shrink-0 ${isSelected ? "text-amber-400" : "text-zinc-500"}`}
+                    className={`h-3.5 w-3.5 mr-2 mt-0.5 flex-shrink-0 ${isSelected ? "text-amber-400" : "text-[var(--text-muted)]"}`}
                   />
                   <div className="flex-1 min-w-0">
                     <p
-                      className={`text-sm font-medium truncate ${isSelected ? "text-white" : "text-zinc-300"}`}
+                      className={`text-sm font-medium truncate ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                     >
                       {doc.filename}
                     </p>
-                    <p className="text-xs text-zinc-600 mt-0.5">
+                    <p className="text-xs text-[var(--text-muted)] mt-0.5">
                       {new Date(doc.created_at).toLocaleDateString()}
                     </p>
                     {doc.preview_text && (
-                      <p className="text-xs text-zinc-600 mt-1 line-clamp-2">
+                      <p className="text-xs text-[var(--text-muted)] mt-1 line-clamp-2">
                         {doc.preview_text}
                       </p>
                     )}
@@ -228,7 +225,7 @@ export default function DocumentList({
                 {/* Preview Button */}
                 <button
                   onClick={(e) => handlePreview(e, doc)}
-                  className="p-1.5 text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
+                  className="p-1.5 text-[var(--text-muted)] hover:text-violet-400 hover:bg-violet-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
                   title="Preview document"
                 >
                   <Eye className="h-3.5 w-3.5" />
@@ -238,7 +235,7 @@ export default function DocumentList({
                 <button
                   onClick={(e) => handleDelete(e, doc.id)}
                   disabled={deleteDocumentMutation.isPending}
-                  className="p-1.5 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
+                  className="p-1.5 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg opacity-0 group-hover:opacity-100 transition-all disabled:opacity-50"
                   title="Delete document"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

@@ -171,8 +171,10 @@ export default function UploadPage() {
             <Upload className="h-6 w-6 text-violet-400" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-white">Upload Content</h1>
-            <p className="text-zinc-500 text-sm mt-1">
+            <h1 className="text-2xl font-bold text-[var(--text-primary)]">
+              Upload Content
+            </h1>
+            <p className="text-[var(--text-muted)] text-sm mt-1">
               Add documents and images to your multimodal knowledge base
             </p>
           </div>
@@ -186,7 +188,7 @@ export default function UploadPage() {
           className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === "documents"
               ? "bg-violet-500/20 text-violet-400 border border-violet-500/30"
-              : "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800 hover:text-zinc-300"
+              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]"
           }`}
         >
           <FileText className="h-4 w-4 mr-2" />
@@ -197,7 +199,7 @@ export default function UploadPage() {
           className={`flex items-center px-4 py-2.5 rounded-xl font-medium text-sm transition-all ${
             activeTab === "images"
               ? "bg-fuchsia-500/20 text-fuchsia-400 border border-fuchsia-500/30"
-              : "bg-zinc-800/50 text-zinc-400 border border-zinc-700/50 hover:bg-zinc-800 hover:text-zinc-300"
+              : "bg-[var(--bg-secondary)] text-[var(--text-secondary)] border border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] hover:text-[var(--text-primary)]"
           }`}
         >
           <ImageIcon className="h-4 w-4 mr-2" />
@@ -248,7 +250,7 @@ export default function UploadPage() {
       {activeTab === "documents" && (
         <>
           {/* Document Upload Section */}
-          <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-6 mb-8">
+          <div className="bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] p-6 mb-8 transition-colors">
             <FileDrop onFileSelect={handleFileSelect} />
 
             {selectedFile && !uploadStatus && (
@@ -268,17 +270,17 @@ export default function UploadPage() {
           </div>
 
           {/* Documents List */}
-          <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-6">
+          <div className="bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] p-6 transition-colors">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
                 <div className="p-2 rounded-xl bg-amber-500/15 mr-3">
                   <FileText className="h-5 w-5 text-amber-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                     Uploaded Documents
                   </h2>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-[var(--text-muted)]">
                     {documents?.length || 0} documents in knowledge base
                   </p>
                 </div>
@@ -330,7 +332,7 @@ export default function UploadPage() {
                         className={`p-4 rounded-xl border transition-all duration-200 group ${
                           isSelected
                             ? "bg-violet-500/10 border-violet-500/30"
-                            : "bg-zinc-800/50 border-zinc-700/50 hover:bg-zinc-800 hover:border-zinc-600"
+                            : "bg-[var(--bg-secondary)]/50 border-[var(--border-subtle)] hover:bg-[var(--hover-bg)] hover:border-[var(--border-subtle)]"
                         }`}
                         style={{ animationDelay: `${index * 50}ms` }}
                       >
@@ -341,7 +343,7 @@ export default function UploadPage() {
                             className={`w-4 h-4 rounded-md border-2 flex items-center justify-center transition-all flex-shrink-0 mt-0.5 cursor-pointer ${
                               isSelected
                                 ? "bg-gradient-to-br from-violet-500 to-fuchsia-500 border-transparent"
-                                : "border-zinc-600 hover:border-violet-500/50"
+                                : "border-[var(--border-subtle)] hover:border-violet-500/50"
                             }`}
                           >
                             {isSelected && (
@@ -364,20 +366,20 @@ export default function UploadPage() {
                           <div className="ml-4 flex-1">
                             <div className="flex items-center">
                               <FileText
-                                className={`h-3.5 w-3.5 mr-2 ${isSelected ? "text-violet-400" : "text-zinc-500"}`}
+                                className={`h-3.5 w-3.5 mr-2 ${isSelected ? "text-violet-400" : "text-[var(--text-muted)]"}`}
                               />
                               <h3
-                                className={`text-sm font-medium ${isSelected ? "text-white" : "text-zinc-300"}`}
+                                className={`text-sm font-medium ${isSelected ? "text-[var(--text-primary)]" : "text-[var(--text-secondary)]"}`}
                               >
                                 {doc.filename}
                               </h3>
                             </div>
-                            <p className="text-xs text-zinc-600 mt-1">
+                            <p className="text-xs text-[var(--text-muted)] mt-1">
                               Uploaded:{" "}
                               {new Date(doc.created_at).toLocaleString()}
                             </p>
                             {doc.preview_text && (
-                              <p className="text-xs text-zinc-500 mt-1.5 line-clamp-2">
+                              <p className="text-xs text-[var(--text-muted)] mt-1.5 line-clamp-2">
                                 {doc.preview_text}
                               </p>
                             )}
@@ -385,7 +387,7 @@ export default function UploadPage() {
                           <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-all">
                             <button
                               onClick={() => setPreviewDoc(doc)}
-                              className="p-2 text-zinc-600 hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-all"
+                              className="p-2 text-[var(--text-muted)] hover:text-violet-400 hover:bg-violet-500/10 rounded-lg transition-all"
                               title="Preview document"
                             >
                               <Eye className="h-3.5 w-3.5" />
@@ -395,7 +397,7 @@ export default function UploadPage() {
                                 handleDeleteSingle(doc.id, doc.filename)
                               }
                               disabled={deleteDocMutation.isPending}
-                              className="p-2 text-zinc-600 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
+                              className="p-2 text-[var(--text-muted)] hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-all disabled:opacity-50"
                               title="Delete document"
                             >
                               <Trash2 className="h-3.5 w-3.5" />
@@ -409,11 +411,13 @@ export default function UploadPage() {
               </>
             ) : (
               <div className="text-center py-12">
-                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-zinc-800/50 mb-4">
-                  <FileText className="h-7 w-7 text-zinc-600" />
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-[var(--bg-secondary)]/50 mb-4">
+                  <FileText className="h-7 w-7 text-[var(--text-muted)]" />
                 </div>
-                <p className="text-zinc-400">No documents uploaded yet</p>
-                <p className="text-xs text-zinc-600 mt-1">
+                <p className="text-[var(--text-secondary)]">
+                  No documents uploaded yet
+                </p>
+                <p className="text-xs text-[var(--text-muted)] mt-1">
                   Upload your first document above to get started
                 </p>
               </div>
@@ -434,16 +438,16 @@ export default function UploadPage() {
       {activeTab === "images" && (
         <>
           {/* Image Upload Section */}
-          <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-6 mb-8">
+          <div className="bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] p-6 mb-8 transition-colors">
             <div className="flex items-center mb-4">
               <div className="p-2 rounded-xl bg-fuchsia-500/15 mr-3">
                 <ImageIcon className="h-5 w-5 text-fuchsia-400" />
               </div>
               <div>
-                <h2 className="text-lg font-semibold text-white">
+                <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                   Upload Image
                 </h2>
-                <p className="text-xs text-zinc-500">
+                <p className="text-xs text-[var(--text-muted)]">
                   Images are indexed with CLIP for semantic search
                 </p>
               </div>
@@ -456,17 +460,17 @@ export default function UploadPage() {
           </div>
 
           {/* Image Gallery */}
-          <div className="bg-zinc-900/60 backdrop-blur-sm rounded-2xl border border-zinc-800/80 p-6">
+          <div className="bg-[var(--bg-secondary)]/60 backdrop-blur-sm rounded-2xl border border-[var(--border-subtle)] p-6 transition-colors">
             <div className="flex items-center justify-between mb-6">
               <div className="flex items-center">
                 <div className="p-2 rounded-xl bg-cyan-500/15 mr-3">
                   <ImageIcon className="h-5 w-5 text-cyan-400" />
                 </div>
                 <div>
-                  <h2 className="text-lg font-semibold text-white">
+                  <h2 className="text-lg font-semibold text-[var(--text-primary)]">
                     Image Gallery
                   </h2>
-                  <p className="text-xs text-zinc-500">
+                  <p className="text-xs text-[var(--text-muted)]">
                     {images.length} images in knowledge base
                   </p>
                 </div>

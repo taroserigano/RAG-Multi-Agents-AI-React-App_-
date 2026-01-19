@@ -17,6 +17,7 @@ from app.schemas import DocumentResponse, UploadResponse, ErrorResponse
 from app.rag.indexing import index_document, delete_document_from_index
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.cache import get_cache
 
 router = APIRouter(prefix="/api/docs", tags=["documents"])
 settings = get_settings()
@@ -128,6 +129,12 @@ async def upload_document(
                 logger.warning("Database not available, document metadata not saved")
             
             logger.info(f"Document {safe_filename} uploaded successfully with ID {doc_id}")
+            
+            # Invalidate retrieval cache (new document means old cached results may be incomplete)
+            cache = get_cache()
+            cache.invalidate_retrieval()
+            cache.invalidate_api("/api/docs")
+            logger.debug("Cache invalidated after document upload")
             
             return UploadResponse(
                 doc_id=doc_id,
@@ -281,6 +288,12 @@ def delete_document(doc_id: str, db: Session = Depends(get_db)):
         # Delete from database
         db.delete(document)
         db.commit()
+        
+        # Invalidate cache
+        cache = get_cache()
+        cache.invalidate_retrieval()
+        cache.invalidate_api("/api/docs")
+        logger.debug("Cache invalidated after document deletion")
         
         logger.info(f"Document {filename} (ID: {doc_id}) deleted successfully")
         

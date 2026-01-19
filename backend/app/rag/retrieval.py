@@ -1,6 +1,7 @@
 """
 Retrieval module for querying Pinecone and retrieving relevant document chunks.
 Supports semantic search, hybrid search (keyword + semantic), and advanced options.
+Includes Redis caching for improved performance.
 """
 from typing import List, Dict, Any, Optional
 import re
@@ -8,6 +9,7 @@ from collections import defaultdict
 
 from app.core.config import get_settings
 from app.core.logging import get_logger
+from app.core.cache import get_cache
 from app.rag.embeddings import default_embeddings
 from app.rag.indexing import get_pinecone_index
 
@@ -54,6 +56,7 @@ def retrieve_relevant_chunks(
 ) -> tuple[List[Citation], str]:
     """
     Retrieve relevant document chunks from Pinecone.
+    Uses Redis caching for improved performance.
     
     Args:
         query: User question
@@ -68,6 +71,26 @@ def retrieve_relevant_chunks(
     """
     if top_k is None:
         top_k = settings.top_k
+    
+    # Try cache first
+    cache = get_cache()
+    cache_options = {"hybrid": use_hybrid}
+    cached = cache.get_retrieval(query, top_k, doc_ids, cache_options)
+    if cached is not None:
+        logger.info(f"Retrieval cache hit for query")
+        # Reconstruct Citation objects from cached data
+        citations = [
+            Citation(
+                doc_id=c["doc_id"],
+                filename=c["filename"],
+                text=c["text"],
+                score=c["score"],
+                page_number=c.get("page_number"),
+                chunk_index=c.get("chunk_index", 0)
+            )
+            for c in cached["citations"]
+        ]
+        return citations, cached["context"]
     
     logger.info(f"Retrieving top {top_k} chunks for query (hybrid={use_hybrid})")
     
@@ -125,6 +148,16 @@ def retrieve_relevant_chunks(
     context_text = "\n---\n".join(context_parts)
     
     logger.info(f"Retrieved {len(citations)} relevant chunks")
+    
+    # Cache the results
+    cache.set_retrieval(
+        query, top_k,
+        {
+            "citations": [c.to_dict() for c in citations],
+            "context": context_text
+        },
+        doc_ids, cache_options
+    )
     
     return citations, context_text
 

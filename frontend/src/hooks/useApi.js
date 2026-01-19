@@ -3,6 +3,7 @@
  * Provides caching, loading states, and error handling.
  */
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import toast from "react-hot-toast";
 import {
   getDocuments,
   uploadDocument,
@@ -12,6 +13,9 @@ import {
   sendChatMessage,
   getChatHistory,
   clearChatHistory,
+  getImages,
+  uploadImage,
+  deleteImage,
 } from "../api/client";
 
 // ============================================================================
@@ -40,9 +44,12 @@ export const useUploadDocument = () => {
 
   return useMutation({
     mutationFn: uploadDocument,
-    onSuccess: () => {
-      // Invalidate and refetch documents list
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success(`Document "${data.filename}" uploaded successfully`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || "Failed to upload document");
     },
   });
 };
@@ -57,8 +64,11 @@ export const useDeleteDocument = () => {
   return useMutation({
     mutationFn: deleteDocument,
     onSuccess: () => {
-      // Invalidate and refetch documents list
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success("Document deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete document");
     },
   });
 };
@@ -72,9 +82,12 @@ export const useBulkDeleteDocuments = () => {
 
   return useMutation({
     mutationFn: bulkDeleteDocuments,
-    onSuccess: () => {
-      // Invalidate and refetch documents list
+    onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["documents"] });
+      toast.success(`${variables.length} document(s) deleted`);
+    },
+    onError: () => {
+      toast.error("Failed to delete documents");
     },
   });
 };
@@ -133,8 +146,66 @@ export const useClearChatHistory = () => {
   return useMutation({
     mutationFn: clearChatHistory,
     onSuccess: (_, userId) => {
-      // Invalidate chat history for this user
       queryClient.invalidateQueries({ queryKey: ["chatHistory", userId] });
+      toast.success("Chat history cleared");
+    },
+    onError: () => {
+      toast.error("Failed to clear chat history");
+    },
+  });
+};
+
+// ============================================================================
+// Image Hooks
+// ============================================================================
+
+/**
+ * Hook to fetch all images
+ * Automatically refetches and caches data
+ */
+export const useImages = () => {
+  return useQuery({
+    queryKey: ["images"],
+    queryFn: () => getImages(),
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true,
+  });
+};
+
+/**
+ * Hook to upload an image
+ * Invalidates images list on success
+ */
+export const useUploadImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: uploadImage,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["images"] });
+      toast.success(`Image "${data.filename}" uploaded`);
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.detail || "Failed to upload image");
+    },
+  });
+};
+
+/**
+ * Hook to delete an image
+ * Invalidates images list on success
+ */
+export const useDeleteImage = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteImage,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["images"] });
+      toast.success("Image deleted");
+    },
+    onError: () => {
+      toast.error("Failed to delete image");
     },
   });
 };

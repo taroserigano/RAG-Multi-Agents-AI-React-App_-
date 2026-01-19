@@ -2,11 +2,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variables for theming */
+/* CSS Variables for theming - Dark Mode (default) */
 :root {
   --bg-primary: #09090b;
   --bg-secondary: #18181b;
   --bg-tertiary: #27272a;
+  --bg-card: #18181b;
   --accent-primary: #8b5cf6;
   --accent-secondary: #a78bfa;
   --accent-gradient: linear-gradient(
@@ -25,9 +26,44 @@
   --text-secondary: #a1a1aa;
   --text-muted: #71717a;
   --border-color: rgba(139, 92, 246, 0.15);
+  --border-subtle: rgba(255, 255, 255, 0.06);
   --glass-bg: rgba(24, 24, 27, 0.85);
   --glass-border: rgba(255, 255, 255, 0.06);
   --glow-color: rgba(139, 92, 246, 0.4);
+  --input-bg: #18181b;
+  --hover-bg: rgba(255, 255, 255, 0.04);
+}
+
+/* Light Mode Variables */
+.light {
+  --bg-primary: #f8fafc;
+  --bg-secondary: #ffffff;
+  --bg-tertiary: #f1f5f9;
+  --bg-card: #ffffff;
+  --accent-primary: #7c3aed;
+  --accent-secondary: #8b5cf6;
+  --accent-gradient: linear-gradient(
+    135deg,
+    #7c3aed 0%,
+    #6366f1 50%,
+    #3b82f6 100%
+  );
+  --accent-gradient-vibrant: linear-gradient(
+    135deg,
+    #ec4899 0%,
+    #8b5cf6 50%,
+    #6366f1 100%
+  );
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #94a3b8;
+  --border-color: rgba(139, 92, 246, 0.2);
+  --border-subtle: rgba(0, 0, 0, 0.08);
+  --glass-bg: rgba(255, 255, 255, 0.9);
+  --glass-border: rgba(0, 0, 0, 0.08);
+  --glow-color: rgba(139, 92, 246, 0.3);
+  --input-bg: #f1f5f9;
+  --hover-bg: rgba(0, 0, 0, 0.04);
 }
 
 /* Base styles */

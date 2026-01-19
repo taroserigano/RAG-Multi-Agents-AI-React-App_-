@@ -39,6 +39,13 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     anthropic_chat_model: str = "claude-3-5-sonnet-latest"
     
+    # Redis Cache
+    redis_host: str = "localhost"
+    redis_port: int = 6379
+    redis_password: str = ""
+    redis_db: int = 0
+    cache_enabled: bool = True
+    
     # API Security (optional)
     api_key: str = ""  # If set, require X-API-Key header
     
